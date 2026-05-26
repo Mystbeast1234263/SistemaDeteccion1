@@ -1,0 +1,6 @@
+"""Componentes de interfaz gráfica."""
+
+from ui.main_window import MainWindow
+
+__all__ = ["MainWindow"]
+

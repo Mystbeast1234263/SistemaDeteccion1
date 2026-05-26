@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentación - SIDACS</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 11pt;
+            line-height: 1.5;
+            text-align: justify;
+            color: #1a1a1a;
+            background-color: #ffffff;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 50px 60px;
+        }
+        h1, h2, h3 { text-align: left; color: #0a1628; }
+        h1 { font-size: 18pt; border-bottom: 2px solid #1e3a5f; padding-bottom: 8px; margin-top: 0; }
+        h2 { font-size: 14pt; margin-top: 28px; border-bottom: 1px solid #c5d4e8; padding-bottom: 4px; }
+        h3 { font-size: 12pt; margin-top: 20px; }
+        pre {
+            background-color: #f4f7fb;
+            border: 1px solid #c5d4e8;
+            padding: 12px;
+            overflow-x: auto;
+            line-height: 1.4;
+            text-align: left;
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 9.5pt;
+        }
+        .meta { font-size: 10pt; color: #4a6278; margin-bottom: 24px; }
+        .changelog-entry { margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px dashed #d0dce8; }
+        .changelog-date { font-weight: bold; color: #1e3a5f; }
+    </style>
+</head>
+<body>
+    <h1>Sistema Inteligente de Detección y Análisis de Comportamientos Sospechosos</h1>
+    <p class="meta">
+        <strong>Proyecto:</strong> SIDACS (SistemaDeteccion)<br>
+        <strong>Versión actual:</strong> 1.0.0-sprint1<br>
+        <strong>Archivo:</strong> documentacion.html
+    </p>
+
+    <h2>Descripción general</h2>
+    <p>
+        SIDACS es una aplicación de escritorio desarrollada en Python con PyQt5 y OpenCV.
+        En Sprint 1 el sistema incluye la interfaz visual completa, importación y reproducción de video,
+        y transmisión en vivo desde webcam. No incluye detección automática de movimiento ni IA avanzada.
+    </p>
+
+    <h2>Estructura del proyecto</h2>
+    <pre>
+SistemaDeteccion/
+│
+├── main.py
+├── requirements.txt
+├── documentacion.html
+│
+├── ui/
+├── video/
+├── styles/
+└── utils/
+    </pre>
+
+    <h2>Ejecutar</h2>
+    <pre>python main.py</pre>
+
+    <h2>Registro de cambios</h2>
+    <div class="changelog-entry">
+        <p class="changelog-date">Sprint 1 - Base del sistema</p>
+        <p>
+            Interfaz futurista tipo centro de monitoreo, panel de video, barra de controles, panel lateral,
+            importación y reproducción de video, activación de webcam, tema oscuro QSS y estructura modular.
+        </p>
+    </div>
+</body>
+</html>
+
