@@ -1,7 +1,7 @@
 """Constantes globales de la aplicación."""
 
 APP_NAME = "Sistema Inteligente de Detección y Análisis de Comportamientos Sospechosos"
-APP_VERSION = "1.0.0-sprint1"
+APP_VERSION = "2.0.0-sprint2"
 APP_SHORT_NAME = "SIDACS"
 
 COLORS = {
@@ -28,4 +28,23 @@ VIDEO_EXTENSIONS = (
 
 DEFAULT_FPS = 30
 WEBCAM_INDEX = 0
+
+# Flujo óptico Farneback (Sprint 2)
+FLOW_PROCESS_WIDTH = 640
+FLOW_PROCESS_HEIGHT = 360
+FLOW_GRID_STEP = 16
+FLOW_MIN_MAGNITUDE = 0.4
+FLOW_MAGNITUDE_SCALE = 12.0
+FLOW_SMOOTH_ALPHA = 0.35
+
+# Nivel de riesgo según intensidad (0-100)
+RISK_MEDIUM_MIN = 26
+RISK_HIGH_MIN = 56
+
+# Alertas automáticas
+ALERT_MOTION_MIN = 15
+ALERT_ELEVATED_MIN = 26
+ALERT_INTENSE_MIN = 56
+ALERT_COOLDOWN_SEC = 4.0
+ALERT_MAX_ITEMS = 50
 

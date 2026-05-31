@@ -20,6 +20,7 @@
         h1 { font-size: 18pt; border-bottom: 2px solid #1e3a5f; padding-bottom: 8px; margin-top: 0; }
         h2 { font-size: 14pt; margin-top: 28px; border-bottom: 1px solid #c5d4e8; padding-bottom: 4px; }
         h3 { font-size: 12pt; margin-top: 20px; }
+        p, li { text-align: justify; }
         pre {
             background-color: #f4f7fb;
             border: 1px solid #c5d4e8;
@@ -30,6 +31,9 @@
             font-family: Consolas, "Courier New", monospace;
             font-size: 9.5pt;
         }
+        table { width: 100%; border-collapse: collapse; margin: 12px 0 18px; font-size: 10pt; }
+        th, td { border: 1px solid #b0c4de; padding: 8px 10px; text-align: left; vertical-align: top; }
+        th { background-color: #e8f0fa; font-weight: bold; }
         .meta { font-size: 10pt; color: #4a6278; margin-bottom: 24px; }
         .changelog-entry { margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px dashed #d0dce8; }
         .changelog-date { font-weight: bold; color: #1e3a5f; }
@@ -39,15 +43,16 @@
     <h1>Sistema Inteligente de Detección y Análisis de Comportamientos Sospechosos</h1>
     <p class="meta">
         <strong>Proyecto:</strong> SIDACS (SistemaDeteccion)<br>
-        <strong>Versión actual:</strong> 1.0.0-sprint1<br>
+        <strong>Versión actual:</strong> 2.0.0-sprint2<br>
         <strong>Archivo:</strong> documentacion.html
     </p>
 
     <h2>Descripción general</h2>
     <p>
-        SIDACS es una aplicación de escritorio desarrollada en Python con PyQt5 y OpenCV.
-        En Sprint 1 el sistema incluye la interfaz visual completa, importación y reproducción de video,
-        y transmisión en vivo desde webcam. No incluye detección automática de movimiento ni IA avanzada.
+        SIDACS es una aplicación de escritorio desarrollada en Python con PyQt5 y OpenCV, orientada a un
+        centro de monitoreo inteligente. El Sprint 1 entrega la interfaz, reproducción de video y webcam.
+        El Sprint 2 agrega detección de movimiento mediante Flujo Óptico Farneback, sin Machine Learning
+        ni Deep Learning.
     </p>
 
     <h2>Estructura del proyecto</h2>
@@ -59,22 +64,111 @@ SistemaDeteccion/
 ├── documentacion.html
 │
 ├── ui/
+│   ├── main_window.py
+│   ├── video_panel.py
+│   ├── sidebar_panel.py
+│   └── control_bar.py
+│
 ├── video/
+│   ├── player.py
+│   ├── webcam.py
+│   ├── frame_utils.py
+│   └── optical_flow.py      ← Sprint 2: Flujo Óptico Farneback
+│
 ├── styles/
+│   └── dark_theme.qss
+│
 └── utils/
+    └── constants.py
     </pre>
 
+    <h2>Sprint 2 — Flujo Óptico Farneback</h2>
+
+    <h3>Módulo video/optical_flow.py</h3>
+    <p>
+        Clase <strong>OpticalFlowAnalyzer</strong> que utiliza <code>cv2.calcOpticalFlowFarneback()</code>
+        para comparar frames consecutivos. Calcula magnitud, dirección e intensidad global del movimiento,
+        y genera una visualización con vectores y flechas sobre el video.
+    </p>
+
+    <h3>Características expuestas (preparadas para ML futuro)</h3>
+    <p>Dataclass <strong>MotionFeatures</strong> con las variables:</p>
+    <ul>
+        <li><code>intensidad_movimiento</code> — valor 0-100 %</li>
+        <li><code>magnitud_promedio</code> — magnitud media de los vectores activos</li>
+        <li><code>direccion_promedio</code> — dirección media en grados (0-360)</li>
+        <li><code>cantidad_movimiento</code> — porcentaje de píxeles con movimiento significativo</li>
+        <li><code>nivel_riesgo</code> — BAJO, MEDIO o ALTO</li>
+    </ul>
+
+    <h3>Intensidad de movimiento</h3>
+    <p>
+        Se calcula a partir de la magnitud promedio del flujo óptico, con suavizado exponencial para
+        estabilidad visual. Se actualiza en tiempo real en el panel lateral (barra de progreso).
+    </p>
+
+    <h3>Nivel de riesgo</h3>
+    <table>
+        <thead>
+            <tr><th>Nivel</th><th>Rango de intensidad</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>BAJO</td><td>0 % – 25 %</td></tr>
+            <tr><td>MEDIO</td><td>26 % – 55 %</td></tr>
+            <tr><td>ALTO</td><td>56 % – 100 %</td></tr>
+        </tbody>
+    </table>
+
+    <h3>Alertas automáticas</h3>
+    <p>El sistema genera alertas en el panel lateral cuando la intensidad supera umbrales definidos:</p>
+    <ul>
+        <li><strong>Movimiento detectado</strong> — intensidad ≥ 15 %</li>
+        <li><strong>Actividad elevada</strong> — intensidad ≥ 26 %</li>
+        <li><strong>Movimiento intenso / Riesgo alto</strong> — intensidad ≥ 56 %</li>
+    </ul>
+    <p>Entre alertas consecutivas se aplica un cooldown de 4 segundos para evitar saturación.</p>
+
+    <h3>Visualización</h3>
+    <p>
+        Sobre el video se dibujan flechas de dirección del flujo óptico (rejilla cada 16 px) con colores
+        según magnitud. Un HUD en la esquina superior muestra intensidad, riesgo, magnitud y dirección.
+    </p>
+
+    <h3>Compatibilidad</h3>
+    <p>
+        La misma implementación funciona para videos importados y webcam. El análisis se activa al pulsar
+        <strong>Iniciar Monitoreo</strong> y se detiene con <strong>Detener Análisis</strong>.
+    </p>
+
+    <h3>Rendimiento</h3>
+    <p>
+        El flujo óptico se calcula sobre frames reducidos (máx. 640×360) para mantener fluidez en tiempo
+        real. La visualización se escala al tamaño original del frame.
+    </p>
+
     <h2>Ejecutar</h2>
-    <pre>python main.py</pre>
+    <pre>cd F:\emergentes\emergentes\SistemaDeteccion
+pip install -r requirements.txt
+python main.py</pre>
 
     <h2>Registro de cambios</h2>
+
     <div class="changelog-entry">
-        <p class="changelog-date">Sprint 1 - Base del sistema</p>
+        <p class="changelog-date">Sprint 1 — Base del sistema</p>
         <p>
             Interfaz futurista tipo centro de monitoreo, panel de video, barra de controles, panel lateral,
             importación y reproducción de video, activación de webcam, tema oscuro QSS y estructura modular.
         </p>
     </div>
+
+    <div class="changelog-entry">
+        <p class="changelog-date">Sprint 2 — Flujo Óptico Farneback</p>
+        <p>
+            Nuevo módulo <code>video/optical_flow.py</code> con análisis Farneback, visualización de vectores,
+            intensidad de movimiento (0-100 %), nivel de riesgo dinámico, alertas automáticas y registro de
+            actividades. Integración en <code>ui/main_window.py</code> sin modificar diseño ni arquitectura.
+            Constantes de umbrales en <code>utils/constants.py</code>. Versión 2.0.0-sprint2.
+        </p>
+    </div>
 </body>
 </html>
-

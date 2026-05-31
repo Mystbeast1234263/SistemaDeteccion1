@@ -1,6 +1,7 @@
 """Ventana principal del sistema de monitoreo."""
 
 import os
+import time
 from datetime import datetime
 
 from PyQt5.QtCore import QTimer, Qt
@@ -18,7 +19,17 @@ from PyQt5.QtWidgets import (
 from ui.control_bar import ControlBar
 from ui.sidebar_panel import SidebarPanel
 from ui.video_panel import VideoPanel
-from utils.constants import APP_NAME, APP_SHORT_NAME, VIDEO_EXTENSIONS
+from utils.constants import (
+    ALERT_COOLDOWN_SEC,
+    ALERT_ELEVATED_MIN,
+    ALERT_INTENSE_MIN,
+    ALERT_MAX_ITEMS,
+    ALERT_MOTION_MIN,
+    APP_NAME,
+    APP_SHORT_NAME,
+    VIDEO_EXTENSIONS,
+)
+from video.optical_flow import OpticalFlowAnalyzer
 from video.player import VideoPlayer
 from video.webcam import WebcamCapture
 
@@ -31,9 +42,12 @@ class MainWindow(QMainWindow):
         self._video_path = ""
         self._monitoring_active = False
         self._source_mode = None  # "file" | "webcam" | None
+        self._last_alert_time = 0.0
+        self._last_risk_level = "BAJO"
 
         self.video_player = VideoPlayer(self)
         self.webcam = WebcamCapture(parent=self)
+        self.motion_analyzer = OpticalFlowAnalyzer()
 
         self._setup_window()
         self._build_ui()
@@ -228,13 +242,18 @@ class MainWindow(QMainWindow):
             return
 
         self._monitoring_active = True
-        self.status_badge.setText("MONITOREO ACTIVO")
+        self._last_alert_time = 0.0
+        self._last_risk_level = "BAJO"
+        self.motion_analyzer.reset()
+        self.sidebar.clear_alerts()
+        self.status_badge.setText("ANALISIS ACTIVO")
         self.status_badge.setStyleSheet(
             "color: #00d4ff; font-size: 11px; font-weight: bold; "
             "padding: 4px 12px; background-color: #141c2e; "
             "border: 1px solid #00d4ff; border-radius: 4px;"
         )
         self.sidebar.set_movement_intensity(0)
+        self.sidebar.log_activity("Flujo optico Farneback activado.", "OK")
         self._update_control_state()
 
     def _on_stop_analysis(self) -> None:
@@ -243,10 +262,12 @@ class MainWindow(QMainWindow):
             self.webcam.stop()
 
         self._monitoring_active = False
+        self.motion_analyzer.reset()
         self.status_badge.setText("EN LINEA")
         self.status_badge.setStyleSheet("")
-        self.sidebar.log_activity("Análisis detenido por el operador.", "WARN")
+        self.sidebar.log_activity("Analisis detenido por el operador.", "WARN")
         self.sidebar.set_movement_intensity(0)
+        self.sidebar.set_risk_level("BAJO")
         self._update_control_state()
 
     def _on_show_history(self) -> None:
@@ -262,17 +283,74 @@ class MainWindow(QMainWindow):
         if frame is None or not getattr(frame, "size", 0):
             return
 
+        display_frame = frame
+
+        if self._monitoring_active:
+            result = self.motion_analyzer.process(frame, draw_overlay=True)
+            display_frame = result.annotated_frame
+            self._update_motion_metrics(result)
+
         if self._source_mode == "file":
-            label = f"REPRODUCCIÓN — {os.path.basename(self._video_path)}"
+            if self._monitoring_active:
+                label = f"ANALISIS — {os.path.basename(self._video_path)}"
+            else:
+                label = f"REPRODUCCION — {os.path.basename(self._video_path)}"
         elif self._source_mode == "webcam":
-            label = "WEBCAM — TRANSMISIÓN EN VIVO"
+            if self._monitoring_active:
+                label = "ANALISIS EN VIVO — WEBCAM"
+            else:
+                label = "WEBCAM — TRANSMISION EN VIVO"
         else:
             label = "MONITOREO"
-        self.video_panel.show_frame(frame, label)
+
+        self.video_panel.show_frame(display_frame, label)
+
+    def _update_motion_metrics(self, result) -> None:
+        self.sidebar.set_movement_intensity(result.intensidad_movimiento)
+        self.sidebar.set_risk_level(result.nivel_riesgo)
+
+        if result.nivel_riesgo != self._last_risk_level:
+            self.sidebar.log_activity(
+                f"Nivel de riesgo: {result.nivel_riesgo}",
+                "WARN" if result.nivel_riesgo != "BAJO" else "INFO",
+            )
+            self._last_risk_level = result.nivel_riesgo
+
+        if not result.motion_detected:
+            return
+
+        now = time.time()
+        if now - self._last_alert_time < ALERT_COOLDOWN_SEC:
+            return
+
+        intensity = result.intensidad_movimiento
+        alert_msg = None
+        log_msg = None
+
+        if intensity >= ALERT_INTENSE_MIN:
+            alert_msg = f"Movimiento intenso — {intensity}% (riesgo ALTO)"
+            log_msg = f"Riesgo alto — intensidad {intensity}%"
+        elif intensity >= ALERT_ELEVATED_MIN:
+            alert_msg = f"Actividad elevada — {intensity}%"
+            log_msg = f"Actividad elevada — intensidad {intensity}%"
+        elif intensity >= ALERT_MOTION_MIN:
+            alert_msg = f"Movimiento detectado — {intensity}%"
+            log_msg = f"Movimiento detectado — intensidad {intensity}%"
+
+        if alert_msg:
+            self.sidebar.add_alert(alert_msg)
+            self.sidebar.log_activity(log_msg, "WARN")
+            self._last_alert_time = now
+
+            if self.sidebar.alerts_list.count() > ALERT_MAX_ITEMS:
+                self.sidebar.alerts_list.takeItem(self.sidebar.alerts_list.count() - 1)
 
     def _on_playback_finished(self) -> None:
-        self.sidebar.log_activity("Reproducción de video finalizada.", "INFO")
+        self.sidebar.log_activity("Reproduccion de video finalizada.", "INFO")
         self._monitoring_active = False
+        self.motion_analyzer.reset()
+        self.sidebar.set_movement_intensity(0)
+        self.sidebar.set_risk_level("BAJO")
         self._update_control_state()
 
     def _on_video_error(self, message: str) -> None:
@@ -286,6 +364,7 @@ class MainWindow(QMainWindow):
         self._video_path = ""
         self._source_mode = None
         self._monitoring_active = False
+        self.motion_analyzer.reset()
         if not keep_ui:
             self.video_panel.clear_display()
             self.control_bar.btn_webcam.setText("Activar Webcam")
@@ -300,5 +379,6 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event) -> None:
         self.video_player.stop()
         self.webcam.stop()
+        self.motion_analyzer.reset()
         event.accept()
 
