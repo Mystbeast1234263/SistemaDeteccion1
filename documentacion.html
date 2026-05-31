@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Documentación - SIDACS</title>
+    <title>Documentación — SIDACS</title>
     <style>
+        * { box-sizing: border-box; }
+
         body {
             font-family: Arial, Helvetica, sans-serif;
             font-size: 11pt;
@@ -16,11 +18,57 @@
             margin: 0 auto;
             padding: 40px 50px 60px;
         }
-        h1, h2, h3 { text-align: left; color: #0a1628; }
-        h1 { font-size: 18pt; border-bottom: 2px solid #1e3a5f; padding-bottom: 8px; margin-top: 0; }
-        h2 { font-size: 14pt; margin-top: 28px; border-bottom: 1px solid #c5d4e8; padding-bottom: 4px; }
-        h3 { font-size: 12pt; margin-top: 20px; }
+
+        h1, h2, h3, h4 {
+            text-align: left;
+            line-height: 1.3;
+            color: #0a1628;
+        }
+
+        h1 {
+            font-size: 18pt;
+            border-bottom: 2px solid #1e3a5f;
+            padding-bottom: 8px;
+            margin-top: 0;
+        }
+
+        h2 {
+            font-size: 14pt;
+            margin-top: 28px;
+            border-bottom: 1px solid #c5d4e8;
+            padding-bottom: 4px;
+        }
+
+        h3 {
+            font-size: 12pt;
+            margin-top: 20px;
+        }
+
         p, li { text-align: justify; }
+
+        ul, ol { padding-left: 24px; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0 18px;
+            font-size: 10pt;
+        }
+
+        th, td {
+            border: 1px solid #b0c4de;
+            padding: 8px 10px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th { background-color: #e8f0fa; font-weight: bold; }
+
+        code {
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 9.5pt;
+        }
+
         pre {
             background-color: #f4f7fb;
             border: 1px solid #c5d4e8;
@@ -31,83 +79,301 @@
             font-family: Consolas, "Courier New", monospace;
             font-size: 9.5pt;
         }
-        table { width: 100%; border-collapse: collapse; margin: 12px 0 18px; font-size: 10pt; }
-        th, td { border: 1px solid #b0c4de; padding: 8px 10px; text-align: left; vertical-align: top; }
-        th { background-color: #e8f0fa; font-weight: bold; }
-        .meta { font-size: 10pt; color: #4a6278; margin-bottom: 24px; }
-        .changelog-entry { margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px dashed #d0dce8; }
-        .changelog-date { font-weight: bold; color: #1e3a5f; }
+
+        .meta {
+            font-size: 10pt;
+            color: #4a6278;
+            margin-bottom: 24px;
+        }
+
+        .note {
+            background-color: #f0f7ff;
+            border-left: 4px solid #00a8cc;
+            padding: 10px 14px;
+            margin: 14px 0;
+        }
+
+        .changelog-entry {
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px dashed #d0dce8;
+        }
+
+        .changelog-date {
+            font-weight: bold;
+            color: #1e3a5f;
+        }
+
+        .toc a {
+            color: #1e3a5f;
+            text-decoration: none;
+        }
+
+        .toc a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
+
     <h1>Sistema Inteligente de Detección y Análisis de Comportamientos Sospechosos</h1>
     <p class="meta">
         <strong>Proyecto:</strong> SIDACS (SistemaDeteccion)<br>
         <strong>Versión actual:</strong> 2.0.0-sprint2<br>
+        <strong>Ubicación del proyecto:</strong> F:\emergentes\emergentes\SistemaDeteccion<br>
+        <strong>Última actualización de este documento:</strong> 26 de mayo de 2026<br>
         <strong>Archivo:</strong> documentacion.html
     </p>
 
-    <h2>Descripción general</h2>
+    <div class="note">
+        <p>Este archivo concentra toda la documentación del proyecto. Debe actualizarse cada vez que se realice un cambio en el código, la estructura, las dependencias o el alcance de los sprints.</p>
+    </div>
+
+    <h2>Índice</h2>
+    <ol class="toc">
+        <li><a href="#descripcion">Descripción general</a></li>
+        <li><a href="#tecnologias">Tecnologías</a></li>
+        <li><a href="#estructura">Estructura del proyecto</a></li>
+        <li><a href="#modulos">Descripción de módulos</a></li>
+        <li><a href="#instalacion">Instalación</a></li>
+        <li><a href="#ejecucion">Ejecución</a></li>
+        <li><a href="#sprint1">Sprint 1 — Interfaz y reproducción</a></li>
+        <li><a href="#sprint2">Sprint 2 — Flujo Óptico Farneback</a></li>
+        <li><a href="#interfaz">Interfaz y diseño visual</a></li>
+        <li><a href="#pendiente">Funcionalidades pendientes</a></li>
+        <li><a href="#changelog">Registro de cambios</a></li>
+    </ol>
+
+    <h2 id="descripcion">1. Descripción general</h2>
     <p>
-        SIDACS es una aplicación de escritorio desarrollada en Python con PyQt5 y OpenCV, orientada a un
-        centro de monitoreo inteligente. El Sprint 1 entrega la interfaz, reproducción de video y webcam.
-        El Sprint 2 agrega detección de movimiento mediante Flujo Óptico Farneback, sin Machine Learning
-        ni Deep Learning.
+        El Sistema Inteligente de Detección y Análisis de Comportamientos Sospechosos (SIDACS) es una
+        aplicación de escritorio desarrollada en Python con interfaz gráfica PyQt5 y procesamiento de video
+        mediante OpenCV. Su propósito es ofrecer un entorno tipo centro de monitoreo inteligente, inspirado
+        en software de ciberseguridad y vigilancia, para importar videos, reproducirlos en la interfaz,
+        activar la webcam y analizar movimiento entre fotogramas consecutivos.
+    </p>
+    <p>
+        El Sprint 1 entrega la interfaz visual completa, reproducción de archivos de video y transmisión en
+        vivo desde webcam. El Sprint 2 agrega detección de movimiento mediante Flujo Óptico Farneback,
+        intensidad de movimiento, nivel de riesgo dinámico, alertas automáticas y registro de actividades
+        en tiempo real. No se utiliza Machine Learning, Deep Learning ni modelos entrenados en esta versión.
     </p>
 
-    <h2>Estructura del proyecto</h2>
+    <h2 id="tecnologias">2. Tecnologías</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Tecnología</th>
+                <th>Uso en el proyecto</th>
+                <th>Versión mínima</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Python</td>
+                <td>Lenguaje principal de la aplicación</td>
+                <td>3.8+</td>
+            </tr>
+            <tr>
+                <td>PyQt5</td>
+                <td>Interfaz gráfica, ventanas, botones, paneles y temporizadores</td>
+                <td>5.15.0</td>
+            </tr>
+            <tr>
+                <td>OpenCV (opencv-python)</td>
+                <td>Lectura de video, captura de webcam, flujo óptico Farneback</td>
+                <td>4.8.0</td>
+            </tr>
+            <tr>
+                <td>NumPy</td>
+                <td>Manejo de matrices de imagen y cálculos de flujo óptico</td>
+                <td>1.24.0</td>
+            </tr>
+        </tbody>
+    </table>
+    <p>Tecnologías explícitamente excluidas en Sprint 2: YOLO, TensorFlow, PyTorch, Keras y cualquier enfoque de Deep Learning o Machine Learning entrenado.</p>
+
+    <h2 id="estructura">3. Estructura del proyecto</h2>
     <pre>
-SistemaDeteccion/
+F:\emergentes\emergentes\SistemaDeteccion/
 │
-├── main.py
-├── requirements.txt
-├── documentacion.html
+├── main.py                 → Punto de entrada
+├── documentacion.html      → Este archivo de documentación
+├── requirements.txt        → Dependencias Python
+├── README.md
 │
 ├── ui/
-│   ├── main_window.py
-│   ├── video_panel.py
-│   ├── sidebar_panel.py
-│   └── control_bar.py
+│   ├── __init__.py
+│   ├── main_window.py      → Ventana principal y lógica de UI
+│   ├── video_panel.py      → Área de visualización de video
+│   ├── sidebar_panel.py    → Panel lateral (métricas y registros)
+│   └── control_bar.py      → Barra de botones de control
 │
 ├── video/
-│   ├── player.py
-│   ├── webcam.py
-│   ├── frame_utils.py
-│   └── optical_flow.py      ← Sprint 2: Flujo Óptico Farneback
+│   ├── __init__.py
+│   ├── player.py           → Reproductor de archivos de video
+│   ├── webcam.py           → Captura desde cámara
+│   ├── frame_utils.py      → Conversión OpenCV → Qt
+│   └── optical_flow.py     → Flujo Óptico Farneback (Sprint 2)
 │
 ├── styles/
-│   └── dark_theme.qss
+│   ├── __init__.py
+│   └── dark_theme.qss      → Tema oscuro futurista
 │
 └── utils/
-    └── constants.py
+    ├── __init__.py
+    └── constants.py        → Constantes globales
     </pre>
 
-    <h2>Sprint 2 — Flujo Óptico Farneback</h2>
+    <h2 id="modulos">4. Descripción de módulos</h2>
 
-    <h3>Módulo video/optical_flow.py</h3>
+    <h3>4.1 main.py</h3>
     <p>
-        Clase <strong>OpticalFlowAnalyzer</strong> que utiliza <code>cv2.calcOpticalFlowFarneback()</code>
-        para comparar frames consecutivos. Calcula magnitud, dirección e intensidad global del movimiento,
-        y genera una visualización con vectores y flechas sobre el video.
+        Punto de entrada de la aplicación. Configura la ruta raíz del proyecto en <code>sys.path</code>,
+        verifica dependencias (PyQt5, OpenCV, NumPy), carga el tema QSS y muestra la ventana principal.
+        Incluye manejo de errores fatales con mensaje en consola o cuadro de diálogo.
     </p>
 
-    <h3>Características expuestas (preparadas para ML futuro)</h3>
-    <p>Dataclass <strong>MotionFeatures</strong> con las variables:</p>
+    <h3>4.2 ui/main_window.py</h3>
+    <p>
+        Ventana principal del dashboard. Orquesta el panel de video, barra de controles, panel lateral y
+        barra superior. Gestiona importación de video, webcam, inicio y detención de monitoreo, y desde
+        Sprint 2 integra el analizador de flujo óptico para actualizar métricas, alertas y registro de
+        actividades en tiempo real.
+    </p>
+
+    <h3>4.3 ui/video_panel.py</h3>
+    <p>
+        Área central de monitoreo. Convierte frames de OpenCV a <code>QPixmap</code> y los muestra con
+        etiquetas de estado. Al limpiar el display utiliza un <code>QPixmap()</code> vacío (corrección
+        aplicada para evitar cierre inesperado de la aplicación en Windows).
+    </p>
+
+    <h3>4.4 ui/sidebar_panel.py</h3>
+    <p>
+        Panel lateral con nivel de riesgo, intensidad de movimiento, lista de alertas detectadas y
+        registro de actividades con colores según nivel (INFO, WARN, ERROR, OK).
+    </p>
+
+    <h3>4.5 ui/control_bar.py</h3>
+    <p>
+        Botones: Importar Video, Activar Webcam, Iniciar Monitoreo, Detener Análisis e Historial.
+        Sin iconos ni emojis en las etiquetas.
+    </p>
+
+    <h3>4.6 video/player.py</h3>
+    <p>
+        Clase <code>VideoPlayer</code>: lectura y reproducción de archivos con <code>cv2.VideoCapture</code>
+        y <code>QTimer</code> al FPS del video o 30 por defecto.
+    </p>
+
+    <h3>4.7 video/webcam.py</h3>
+    <p>
+        Clase <code>WebcamCapture</code>: captura en vivo desde la cámara (índice 0). Marca la cámara como
+        inactiva antes de liberar el recurso para evitar lecturas posteriores al detener la webcam.
+    </p>
+
+    <h3>4.8 video/frame_utils.py</h3>
+    <p>
+        Función <code>frame_to_pixmap</code>: convierte frames BGR de NumPy a <code>QPixmap</code> escalado
+        manteniendo relación de aspecto.
+    </p>
+
+    <h3>4.9 video/optical_flow.py (Sprint 2)</h3>
+    <p>
+        Clase <code>OpticalFlowAnalyzer</code> con <code>cv2.calcOpticalFlowFarneback()</code>. Expone
+        dataclass <code>MotionFeatures</code> con variables preparadas para futuros sprints de Machine
+        Learning: intensidad_movimiento, magnitud_promedio, direccion_promedio, cantidad_movimiento y
+        nivel_riesgo.
+    </p>
+
+    <h3>4.10 styles/dark_theme.qss</h3>
+    <p>
+        Hoja de estilos Qt con tema oscuro, acentos azul neón (#00d4ff) y rojo neón (#ff3366).
+    </p>
+
+    <h3>4.11 utils/constants.py</h3>
+    <p>
+        Nombre de la aplicación, versión, paleta de colores, extensiones de video, FPS, índice de webcam
+        y constantes de flujo óptico, riesgo y alertas (Sprint 2).
+    </p>
+
+    <h2 id="instalacion">5. Instalación</h2>
+    <p>Requisitos previos: Python 3.8 o superior con pip disponible.</p>
+    <ol>
+        <li>Abrir PowerShell o CMD.</li>
+        <li>Navegar a la carpeta del proyecto.</li>
+        <li>Instalar dependencias.</li>
+    </ol>
+    <pre>cd F:\emergentes\emergentes\SistemaDeteccion
+pip install -r requirements.txt</pre>
+    <p>Contenido de <code>requirements.txt</code>:</p>
     <ul>
-        <li><code>intensidad_movimiento</code> — valor 0-100 %</li>
-        <li><code>magnitud_promedio</code> — magnitud media de los vectores activos</li>
-        <li><code>direccion_promedio</code> — dirección media en grados (0-360)</li>
-        <li><code>cantidad_movimiento</code> — porcentaje de píxeles con movimiento significativo</li>
-        <li><code>nivel_riesgo</code> — BAJO, MEDIO o ALTO</li>
+        <li>PyQt5 &gt;= 5.15.0</li>
+        <li>opencv-python &gt;= 4.8.0</li>
+        <li>numpy &gt;= 1.24.0</li>
     </ul>
 
-    <h3>Intensidad de movimiento</h3>
+    <h2 id="ejecucion">6. Ejecución</h2>
+    <pre>cd F:\emergentes\emergentes\SistemaDeteccion
+python main.py</pre>
     <p>
-        Se calcula a partir de la magnitud promedio del flujo óptico, con suavizado exponencial para
-        estabilidad visual. Se actualiza en tiempo real en el panel lateral (barra de progreso).
+        Para abrir esta documentación, abrir <code>documentacion.html</code> con cualquier navegador web.
     </p>
 
-    <h3>Nivel de riesgo</h3>
+    <h2 id="sprint1">7. Sprint 1 — Interfaz y reproducción</h2>
+    <p>Funcionalidades entregadas en Sprint 1:</p>
+    <ul>
+        <li>Dashboard futurista con tema oscuro profesional.</li>
+        <li>Área grande de visualización de video.</li>
+        <li>Importación de archivos (.mp4, .avi, .mkv, .mov, .wmv).</li>
+        <li>Reproducción de video dentro de la interfaz.</li>
+        <li>Activación y detención de webcam en vivo.</li>
+        <li>Panel lateral con nivel de riesgo, intensidad de movimiento, alertas y registro de actividades.</li>
+        <li>Botones: Importar Video, Activar Webcam, Iniciar Monitoreo, Detener Análisis, Historial.</li>
+        <li>Barra superior con reloj en tiempo real y badge de estado.</li>
+        <li>Arquitectura modular (ui, video, styles, utils).</li>
+    </ul>
+
+    <h3>7.1 Manual de uso (Sprint 1)</h3>
+    <p><strong>Importar video:</strong> pulsar Importar Video, seleccionar archivo. Se muestra el primer frame.</p>
+    <p><strong>Activar webcam:</strong> pulsar Activar Webcam. El botón cambia a Detener Webcam.</p>
+    <p><strong>Iniciar monitoreo:</strong> con fuente cargada, pulsar Iniciar Monitoreo para reproducir o mantener transmisión activa.</p>
+    <p><strong>Detener análisis:</strong> pausa video y apaga webcam si estaba activa.</p>
+    <p><strong>Historial:</strong> aviso de módulo futuro; actividades recientes en el panel lateral.</p>
+
+    <h2 id="sprint2">8. Sprint 2 — Flujo Óptico Farneback</h2>
+
+    <h3>8.1 Objetivo</h3>
+    <p>
+        Implementar detección de movimiento analizando frames consecutivos con
+        <code>cv2.calcOpticalFlowFarneback()</code>, sin Machine Learning. Generar características de
+        movimiento reutilizables en futuros sprints para entrenar un clasificador de comportamientos.
+    </p>
+
+    <h3>8.2 Flujo de análisis</h3>
+    <ol>
+        <li>El usuario pulsa Iniciar Monitoreo.</li>
+        <li>Cada frame pasa por <code>OpticalFlowAnalyzer.process()</code>.</li>
+        <li>Se calcula flujo óptico respecto al frame anterior en escala reducida (640×360 máx.).</li>
+        <li>Se obtienen magnitud, dirección, intensidad (0–100 %) y nivel de riesgo.</li>
+        <li>Se dibujan vectores/flechas sobre el video y se actualiza el panel lateral.</li>
+        <li>Se generan alertas y entradas en el registro si se superan umbrales.</li>
+    </ol>
+
+    <h3>8.3 Características expuestas (MotionFeatures)</h3>
+    <table>
+        <thead>
+            <tr><th>Variable</th><th>Descripción</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>intensidad_movimiento</td><td>Valor global 0–100 % con suavizado exponencial</td></tr>
+            <tr><td>magnitud_promedio</td><td>Magnitud media de vectores con movimiento significativo</td></tr>
+            <tr><td>direccion_promedio</td><td>Dirección media en grados (0–360), media circular</td></tr>
+            <tr><td>cantidad_movimiento</td><td>Porcentaje de píxeles con magnitud por encima del umbral</td></tr>
+            <tr><td>nivel_riesgo</td><td>BAJO, MEDIO o ALTO según intensidad</td></tr>
+        </tbody>
+    </table>
+
+    <h3>8.4 Nivel de riesgo</h3>
     <table>
         <thead>
             <tr><th>Nivel</th><th>Rango de intensidad</th></tr>
@@ -119,56 +385,122 @@ SistemaDeteccion/
         </tbody>
     </table>
 
-    <h3>Alertas automáticas</h3>
-    <p>El sistema genera alertas en el panel lateral cuando la intensidad supera umbrales definidos:</p>
+    <h3>8.5 Alertas automáticas</h3>
+    <table>
+        <thead>
+            <tr><th>Alerta</th><th>Condición</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Movimiento detectado</td><td>Intensidad ≥ 15 %</td></tr>
+            <tr><td>Actividad elevada</td><td>Intensidad ≥ 26 %</td></tr>
+            <tr><td>Movimiento intenso / Riesgo alto</td><td>Intensidad ≥ 56 %</td></tr>
+        </tbody>
+    </table>
+    <p>Cooldown entre alertas consecutivas: 4 segundos. Máximo 50 alertas en lista.</p>
+
+    <h3>8.6 Visualización del movimiento</h3>
+    <p>
+        Flechas de dirección del flujo en rejilla cada 16 px, coloreadas según magnitud (amarillo, naranja,
+        rojo). HUD superior con intensidad, riesgo, magnitud y dirección en grados.
+    </p>
+
+    <h3>8.7 Compatibilidad y rendimiento</h3>
+    <p>
+        Misma implementación para video importado y webcam. Procesamiento en escala reducida para tiempo
+        real. Los primeros ~15 frames calibran el flujo; las métricas se estabilizan después.
+    </p>
+
+    <h3>8.8 Constantes técnicas (utils/constants.py)</h3>
+    <table>
+        <thead>
+            <tr><th>Constante</th><th>Valor</th><th>Descripción</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>FLOW_PROCESS_WIDTH / HEIGHT</td><td>640 / 360</td><td>Resolución máxima de análisis</td></tr>
+            <tr><td>FLOW_GRID_STEP</td><td>16</td><td>Separación de la rejilla de vectores</td></tr>
+            <tr><td>FLOW_MIN_MAGNITUDE</td><td>0.4</td><td>Umbral mínimo de magnitud activa</td></tr>
+            <tr><td>FLOW_MAGNITUDE_SCALE</td><td>12.0</td><td>Factor de escala hacia intensidad 0–100</td></tr>
+            <tr><td>FLOW_SMOOTH_ALPHA</td><td>0.35</td><td>Factor de suavizado exponencial</td></tr>
+        </tbody>
+    </table>
+
+    <h2 id="interfaz">9. Interfaz y diseño visual</h2>
     <ul>
-        <li><strong>Movimiento detectado</strong> — intensidad ≥ 15 %</li>
-        <li><strong>Actividad elevada</strong> — intensidad ≥ 26 %</li>
-        <li><strong>Movimiento intenso / Riesgo alto</strong> — intensidad ≥ 56 %</li>
+        <li>Tema oscuro: fondo #0a0e17, paneles #0f1624.</li>
+        <li>Acentos azul neón y rojo neón.</li>
+        <li>Barra superior con nombre SIDACS, reloj y badge EN LINEA / ANALISIS ACTIVO.</li>
+        <li>Botones sin emojis ni iconos en las etiquetas.</li>
+        <li>Panel lateral con tarjetas de métricas, barra de progreso y log HTML coloreado.</li>
     </ul>
-    <p>Entre alertas consecutivas se aplica un cooldown de 4 segundos para evitar saturación.</p>
 
-    <h3>Visualización</h3>
-    <p>
-        Sobre el video se dibujan flechas de dirección del flujo óptico (rejilla cada 16 px) con colores
-        según magnitud. Un HUD en la esquina superior muestra intensidad, riesgo, magnitud y dirección.
-    </p>
+    <h2 id="pendiente">10. Funcionalidades pendientes</h2>
+    <ul>
+        <li>Módulo de historial persistente (base de datos o archivos).</li>
+        <li>Machine Learning para clasificación de comportamientos sospechosos.</li>
+        <li>Dataset y entrenamiento usando las características de MotionFeatures.</li>
+        <li>Ajuste de sensibilidad desde la interfaz.</li>
+        <li>Grabación de clips de alerta.</li>
+    </ul>
 
-    <h3>Compatibilidad</h3>
-    <p>
-        La misma implementación funciona para videos importados y webcam. El análisis se activa al pulsar
-        <strong>Iniciar Monitoreo</strong> y se detiene con <strong>Detener Análisis</strong>.
-    </p>
-
-    <h3>Rendimiento</h3>
-    <p>
-        El flujo óptico se calcula sobre frames reducidos (máx. 640×360) para mantener fluidez en tiempo
-        real. La visualización se escala al tamaño original del frame.
-    </p>
-
-    <h2>Ejecutar</h2>
-    <pre>cd F:\emergentes\emergentes\SistemaDeteccion
-pip install -r requirements.txt
-python main.py</pre>
-
-    <h2>Registro de cambios</h2>
+    <h2 id="changelog">11. Registro de cambios</h2>
+    <p>Historial cronológico de modificaciones al proyecto.</p>
 
     <div class="changelog-entry">
         <p class="changelog-date">Sprint 1 — Base del sistema</p>
         <p>
-            Interfaz futurista tipo centro de monitoreo, panel de video, barra de controles, panel lateral,
-            importación y reproducción de video, activación de webcam, tema oscuro QSS y estructura modular.
+            Creación inicial con estructura modular (ui, video, styles, utils). Dashboard futurista,
+            panel de video, barra de controles, panel lateral, importación y reproducción de video,
+            activación de webcam, tema QSS y requirements.txt. Versión 1.0.0-sprint1.
+        </p>
+    </div>
+
+    <div class="changelog-entry">
+        <p class="changelog-date">Documentación HTML inicial</p>
+        <p>
+            Creación de documentacion.html como repositorio central. Formato Arial 11 pt, interlineado 1,5,
+            justificación automática. Compromiso de actualizar en cada cambio futuro.
+        </p>
+    </div>
+
+    <div class="changelog-entry">
+        <p class="changelog-date">Ajustes de interfaz</p>
+        <p>
+            Eliminación de emojis en botones y textos del panel de video. Registro de cambios reducido
+            inicialmente solo al Sprint 1 según solicitud del usuario.
+        </p>
+    </div>
+
+    <div class="changelog-entry">
+        <p class="changelog-date">Corrección — Detener Webcam</p>
+        <p>
+            Corregido cierre inesperado de la aplicación al pulsar Detener Webcam. Causa: uso de
+            setPixmap(None) en video_panel.py. Solución: QPixmap() vacío. Mejoras en webcam.py para
+            marcar cámara inactiva antes de liberar recurso e ignorar frames inválidos en main_window.py.
+        </p>
+    </div>
+
+    <div class="changelog-entry">
+        <p class="changelog-date">Reubicación del proyecto</p>
+        <p>
+            Proyecto movido a F:\emergentes\emergentes\SistemaDeteccion. Reconstrucción completa de
+            archivos tras pérdida parcial durante el traslado. main.py reforzado con sys.path, verificación
+            de dependencias y manejo de errores fatales.
         </p>
     </div>
 
     <div class="changelog-entry">
         <p class="changelog-date">Sprint 2 — Flujo Óptico Farneback</p>
         <p>
-            Nuevo módulo <code>video/optical_flow.py</code> con análisis Farneback, visualización de vectores,
-            intensidad de movimiento (0-100 %), nivel de riesgo dinámico, alertas automáticas y registro de
-            actividades. Integración en <code>ui/main_window.py</code> sin modificar diseño ni arquitectura.
-            Constantes de umbrales en <code>utils/constants.py</code>. Versión 2.0.0-sprint2.
+            Nuevo módulo video/optical_flow.py con OpticalFlowAnalyzer y MotionFeatures. Integración en
+            ui/main_window.py: intensidad 0–100 %, riesgo BAJO/MEDIO/ALTO, alertas automáticas, registro
+            de actividades, visualización de vectores y HUD. Constantes en utils/constants.py. Compatibilidad
+            con video y webcam. Versión 2.0.0-sprint2. documentacion.html ampliado con Sprint 2.
         </p>
     </div>
+
+    <p style="margin-top: 32px; font-size: 10pt; color: #4a6278; text-align: center;">
+        SIDACS — Documentación v2.0.0-sprint2
+    </p>
+
 </body>
 </html>
