@@ -29,6 +29,10 @@ def check_dependencies() -> None:
         import numpy  # noqa: F401
     except ImportError:
         missing.append("numpy")
+    try:
+        import sklearn  # noqa: F401
+    except ImportError:
+        missing.append("scikit-learn")
 
     if missing:
         print("Faltan dependencias:", ", ".join(missing))

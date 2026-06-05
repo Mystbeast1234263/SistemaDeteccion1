@@ -117,7 +117,7 @@
     <h1>Sistema Inteligente de Detección y Análisis de Comportamientos Sospechosos</h1>
     <p class="meta">
         <strong>Proyecto:</strong> SIDACS (SistemaDeteccion)<br>
-        <strong>Versión actual:</strong> 2.0.0-sprint2<br>
+        <strong>Versión actual:</strong> 3.0.0-sprint3<br>
         <strong>Ubicación del proyecto:</strong> F:\emergentes\emergentes\SistemaDeteccion<br>
         <strong>Última actualización de este documento:</strong> 26 de mayo de 2026<br>
         <strong>Archivo:</strong> documentacion.html
@@ -137,6 +137,7 @@
         <li><a href="#ejecucion">Ejecución</a></li>
         <li><a href="#sprint1">Sprint 1 — Interfaz y reproducción</a></li>
         <li><a href="#sprint2">Sprint 2 — Flujo Óptico Farneback</a></li>
+        <li><a href="#sprint3">Sprint 3 — Machine Learning y evidencia</a></li>
         <li><a href="#interfaz">Interfaz y diseño visual</a></li>
         <li><a href="#pendiente">Funcionalidades pendientes</a></li>
         <li><a href="#changelog">Registro de cambios</a></li>
@@ -152,9 +153,11 @@
     </p>
     <p>
         El Sprint 1 entrega la interfaz visual completa, reproducción de archivos de video y transmisión en
-        vivo desde webcam. El Sprint 2 agrega detección de movimiento mediante Flujo Óptico Farneback,
-        intensidad de movimiento, nivel de riesgo dinámico, alertas automáticas y registro de actividades
-        en tiempo real. No se utiliza Machine Learning, Deep Learning ni modelos entrenados en esta versión.
+        vivo desde webcam.         El Sprint 2 agrega detección de movimiento mediante Flujo Óptico Farneback,
+        intensidad de movimiento, nivel de riesgo dinámico, alertas automáticas y registro de actividades.
+        El Sprint 3 incorpora Machine Learning clásico con scikit-learn (RandomForestClassifier),
+        dataset inteligente, entrenamiento y predicción en tiempo real, barra de tiempo con segmentos
+        sospechosos, captura automática de evidencia y panel de estadísticas.
     </p>
 
     <h2 id="tecnologias">2. Tecnologías</h2>
@@ -187,9 +190,14 @@
                 <td>Manejo de matrices de imagen y cálculos de flujo óptico</td>
                 <td>1.24.0</td>
             </tr>
+            <tr>
+                <td>scikit-learn</td>
+                <td>Entrenamiento y predicción con RandomForestClassifier (Sprint 3)</td>
+                <td>1.3.0</td>
+            </tr>
         </tbody>
     </table>
-    <p>Tecnologías explícitamente excluidas en Sprint 2: YOLO, TensorFlow, PyTorch, Keras y cualquier enfoque de Deep Learning o Machine Learning entrenado.</p>
+    <p>Tecnologías excluidas: YOLO, TensorFlow, PyTorch, Keras y Deep Learning.</p>
 
     <h2 id="estructura">3. Estructura del proyecto</h2>
     <pre>
@@ -213,6 +221,24 @@ F:\emergentes\emergentes\SistemaDeteccion/
 │   ├── webcam.py           → Captura desde cámara
 │   ├── frame_utils.py      → Conversión OpenCV → Qt
 │   └── optical_flow.py     → Flujo Óptico Farneback (Sprint 2)
+│
+├── ml/                     → Machine Learning (Sprint 3)
+│   ├── dataset_manager.py
+│   ├── model_trainer.py
+│   ├── predictor.py
+│   ├── evidence_manager.py
+│   ├── statistics.py
+│   └── segment_tracker.py
+│
+├── dataset/
+│   └── dataset.csv
+│
+├── models/
+│   └── *.pkl
+│
+├── evidence/
+│   ├── *.png
+│   └── clips/*.mp4
 │
 ├── styles/
 │   ├── __init__.py
@@ -424,7 +450,45 @@ python main.py</pre>
         </tbody>
     </table>
 
-    <h2 id="interfaz">9. Interfaz y diseño visual</h2>
+    <h2 id="sprint3">9. Sprint 3 — Machine Learning y evidencia</h2>
+
+    <h3>9.1 Dataset inteligente (dataset/dataset.csv)</h3>
+    <p>Registro automático cada 30 frames durante el monitoreo y etiquetado manual con botones. Columnas: timestamp, intensidad_movimiento, magnitud_promedio, direccion_promedio, cantidad_movimiento, nivel_riesgo, etiqueta (normal/sospechoso).</p>
+
+    <h3>9.2 Etiquetado manual</h3>
+    <p>Botones <strong>Guardar como Normal</strong> y <strong>Guardar como Sospechoso</strong> registran el frame actual analizado en el dataset.</p>
+
+    <h3>9.3 Entrenamiento del modelo</h3>
+    <p>RandomForestClassifier de scikit-learn. Botones: Entrenar Modelo, Guardar Modelo, Cargar Modelo. Modelos en <code>models/*.pkl</code>.</p>
+
+    <h3>9.4 Importar y exportar modelos</h3>
+    <p>Permite transferir modelos entre computadoras sin reentrenar. Importar copia el .pkl a models/; Exportar guarda una copia en ubicación elegida.</p>
+
+    <h3>9.5 Predicción en tiempo real</h3>
+    <p>Panel lateral muestra Predicción (NORMAL/SOSPECHOSO) y Confianza (0-100%). Usa MotionFeatures como entrada del modelo.</p>
+
+    <h3>9.6 Barra de tiempo inteligente</h3>
+    <p>Barra tipo YouTube bajo el video: duración total, tiempo actual, adelantar/retroceder, clic para ir a cualquier minuto. Compatible con videos importados.</p>
+
+    <h3>9.7 Mapa de segmentos sospechosos</h3>
+    <p>Marcas visuales en la barra: amarillo (riesgo medio), rojo (riesgo alto), rojo intenso (sospechoso con alta confianza).</p>
+
+    <h3>9.8 Navegación por eventos</h3>
+    <p>Clic en una marca salta automáticamente al momento sospechoso del video.</p>
+
+    <h3>9.9 Captura automática de evidencia</h3>
+    <p>Si confianza ≥ 85%, guarda captura PNG en <code>evidence/</code> con formato <code>YYYY-MM-DD_HH-MM-SS.png</code>.</p>
+
+    <h3>9.10 Grabación de evidencia (clips)</h3>
+    <p>Si confianza ≥ 90%, guarda clip MP4 de 5 segundos antes y 5 después en <code>evidence/clips/</code>.</p>
+
+    <h3>9.11 Panel de estadísticas</h3>
+    <p>Total alertas, total sospechosos, tiempo analizado, riesgo promedio, cantidad de capturas y clips.</p>
+
+    <h3>9.12 Optimización</h3>
+    <p>Flujo óptico en resolución reducida (640×360), registro de dataset cada 30 frames, buffer circular para clips, procesamiento en el hilo principal de Qt sin bloqueos adicionales.</p>
+
+    <h2 id="interfaz">10. Interfaz y diseño visual</h2>
     <ul>
         <li>Tema oscuro: fondo #0a0e17, paneles #0f1624.</li>
         <li>Acentos azul neón y rojo neón.</li>
@@ -433,16 +497,15 @@ python main.py</pre>
         <li>Panel lateral con tarjetas de métricas, barra de progreso y log HTML coloreado.</li>
     </ul>
 
-    <h2 id="pendiente">10. Funcionalidades pendientes</h2>
+    <h2 id="pendiente">11. Funcionalidades pendientes</h2>
     <ul>
         <li>Módulo de historial persistente (base de datos o archivos).</li>
-        <li>Machine Learning para clasificación de comportamientos sospechosos.</li>
-        <li>Dataset y entrenamiento usando las características de MotionFeatures.</li>
+        <li>Clasificadores adicionales y validación cruzada avanzada.</li>
         <li>Ajuste de sensibilidad desde la interfaz.</li>
         <li>Grabación de clips de alerta.</li>
     </ul>
 
-    <h2 id="changelog">11. Registro de cambios</h2>
+    <h2 id="changelog">12. Registro de cambios</h2>
     <p>Historial cronológico de modificaciones al proyecto.</p>
 
     <div class="changelog-entry">
@@ -494,12 +557,25 @@ python main.py</pre>
             Nuevo módulo video/optical_flow.py con OpticalFlowAnalyzer y MotionFeatures. Integración en
             ui/main_window.py: intensidad 0–100 %, riesgo BAJO/MEDIO/ALTO, alertas automáticas, registro
             de actividades, visualización de vectores y HUD. Constantes en utils/constants.py. Compatibilidad
-            con video y webcam. Versión 2.0.0-sprint2. documentacion.html ampliado con Sprint 2.
+            con video y webcam. Versión 2.0.0-sprint2.
+        </p>
+    </div>
+
+    <div class="changelog-entry">
+        <p class="changelog-date">Sprint 3 — Análisis inteligente de comportamientos sospechosos</p>
+        <p>
+            Nuevo paquete ml/ con dataset_manager, model_trainer (RandomForestClassifier), predictor,
+            evidence_manager, statistics y segment_tracker. Carpetas dataset/, models/, evidence/.
+            Barra de tiempo ui/timeline_bar.py con marcas de segmentos y navegación por eventos.
+            Botones de etiquetado manual, entrenamiento, guardar/cargar/importar/exportar modelos.
+            Predicción NORMAL/SOSPECHOSO con confianza en panel lateral. Capturas PNG (≥85%) y clips
+            MP4 (≥90%). Panel de estadísticas de sesión. Reproductor extendido con seek y posición.
+            Versión 3.0.0-sprint3. Dependencia scikit-learn agregada.
         </p>
     </div>
 
     <p style="margin-top: 32px; font-size: 10pt; color: #4a6278; text-align: center;">
-        SIDACS — Documentación v2.0.0-sprint2
+        SIDACS — Documentación v3.0.0-sprint3
     </p>
 
 </body>

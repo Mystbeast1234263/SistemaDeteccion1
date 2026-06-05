@@ -11,6 +11,7 @@ class VideoPlayer(QObject):
 
     frame_ready = pyqtSignal(object)
     playback_finished = pyqtSignal()
+    position_changed = pyqtSignal(float, float)
     error_occurred = pyqtSignal(str)
 
     def __init__(self, parent=None):
@@ -21,6 +22,9 @@ class VideoPlayer(QObject):
         self._timer.timeout.connect(self._read_next_frame)
         self._fps = DEFAULT_FPS
         self._playing = False
+        self._total_frames = 0
+        self._current_frame = 0
+        self._duration = 0.0
 
     @property
     def is_playing(self) -> bool:
@@ -29,6 +33,20 @@ class VideoPlayer(QObject):
     @property
     def source_path(self) -> str:
         return self._path
+
+    @property
+    def duration(self) -> float:
+        return self._duration
+
+    @property
+    def current_time(self) -> float:
+        if self._fps <= 0:
+            return 0.0
+        return self._current_frame / self._fps
+
+    @property
+    def fps(self) -> float:
+        return self._fps
 
     def load(self, path: str) -> bool:
         """Carga un archivo de video. Retorna True si fue exitoso."""
@@ -41,8 +59,12 @@ class VideoPlayer(QObject):
 
         fps = capture.get(cv2.CAP_PROP_FPS)
         self._fps = fps if fps and fps > 0 else DEFAULT_FPS
+        self._total_frames = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
+        self._duration = self._total_frames / self._fps if self._fps else 0.0
+        self._current_frame = 0
         self._capture = capture
         self._path = path
+        self.position_changed.emit(0.0, self._duration)
         return True
 
     def play(self) -> None:
@@ -69,11 +91,30 @@ class VideoPlayer(QObject):
             self._capture.release()
             self._capture = None
         self._path = ""
+        self._total_frames = 0
+        self._current_frame = 0
+        self._duration = 0.0
 
     def seek_start(self) -> None:
         """Reinicia el video al inicio."""
-        if self._capture is not None:
-            self._capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
+        self.seek_seconds(0.0)
+
+    def seek_seconds(self, seconds: float) -> None:
+        """Salta a una posición en segundos."""
+        if self._capture is None or not self._capture.isOpened():
+            return
+
+        seconds = max(0.0, min(seconds, self._duration))
+        frame_idx = int(seconds * self._fps)
+        self._capture.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)
+        self._current_frame = frame_idx
+        self.position_changed.emit(self.current_time, self._duration)
+
+        ret, frame = self._capture.read()
+        if ret:
+            self._current_frame = frame_idx + 1
+            self.frame_ready.emit(frame)
+            self.position_changed.emit(self.current_time, self._duration)
 
     def _read_next_frame(self) -> None:
         if self._capture is None:
@@ -86,5 +127,6 @@ class VideoPlayer(QObject):
             self.playback_finished.emit()
             return
 
+        self._current_frame += 1
+        self.position_changed.emit(self.current_time, self._duration)
         self.frame_ready.emit(frame)
-

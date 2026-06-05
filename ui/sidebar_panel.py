@@ -1,14 +1,16 @@
-"""Panel lateral derecho con métricas y registros."""
+"""Panel lateral derecho con métricas, ML y registros."""
 
 from datetime import datetime
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
     QFrame,
+    QHBoxLayout,
     QLabel,
     QListWidget,
     QListWidgetItem,
     QProgressBar,
+    QScrollArea,
     QTextEdit,
     QVBoxLayout,
     QWidget,
@@ -24,8 +26,8 @@ class MetricCard(QFrame):
         super().__init__(parent)
         self.setObjectName("metricCard")
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(14, 12, 14, 12)
-        layout.setSpacing(6)
+        layout.setContentsMargins(14, 10, 14, 10)
+        layout.setSpacing(4)
 
         title_label = QLabel(title)
         title_label.setObjectName("cardTitle")
@@ -42,19 +44,28 @@ class MetricCard(QFrame):
 
 
 class SidebarPanel(QWidget):
-    """Panel de monitoreo: riesgo, movimiento, alertas y actividades."""
+    """Panel de monitoreo: riesgo, movimiento, predicción ML, alertas y estadísticas."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("sidebarPanel")
         self.setMinimumWidth(280)
-        self.setMaximumWidth(340)
+        self.setMaximumWidth(360)
         self._build_ui()
 
     def _build_ui(self) -> None:
-        layout = QVBoxLayout(self)
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setStyleSheet("QScrollArea { background: transparent; border: none; }")
+
+        content = QWidget()
+        layout = QVBoxLayout(content)
         layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(14)
+        layout.setSpacing(12)
 
         header = QLabel("PANEL DE ANÁLISIS")
         header.setStyleSheet(
@@ -69,39 +80,87 @@ class SidebarPanel(QWidget):
         movement_section = QFrame()
         movement_section.setObjectName("metricCard")
         movement_layout = QVBoxLayout(movement_section)
-        movement_layout.setContentsMargins(14, 12, 14, 12)
+        movement_layout.setContentsMargins(14, 10, 14, 10)
 
         movement_title = QLabel("INTENSIDAD DE MOVIMIENTO")
         movement_title.setObjectName("cardTitle")
         self.movement_bar = QProgressBar()
         self.movement_bar.setObjectName("movementBar")
         self.movement_bar.setRange(0, 100)
-        self.movement_bar.setValue(0)
         self.movement_value = QLabel("0%")
-        self.movement_value.setObjectName("cardValue")
         self.movement_value.setAlignment(Qt.AlignCenter)
-        self.movement_value.setStyleSheet(f"color: {COLORS['neon_red']}; font-size: 18px;")
+        self.movement_value.setStyleSheet(f"color: {COLORS['neon_red']}; font-size: 16px;")
 
         movement_layout.addWidget(movement_title)
         movement_layout.addWidget(self.movement_bar)
         movement_layout.addWidget(self.movement_value)
         layout.addWidget(movement_section)
 
+        self.prediction_card = MetricCard("PREDICCION", "SIN MODELO", "cardValue")
+        layout.addWidget(self.prediction_card)
+
+        conf_section = QFrame()
+        conf_section.setObjectName("metricCard")
+        conf_layout = QVBoxLayout(conf_section)
+        conf_layout.setContentsMargins(14, 10, 14, 10)
+        conf_title = QLabel("CONFIANZA")
+        conf_title.setObjectName("cardTitle")
+        self.confidence_bar = QProgressBar()
+        self.confidence_bar.setRange(0, 100)
+        self.confidence_value = QLabel("0%")
+        self.confidence_value.setAlignment(Qt.AlignCenter)
+        self.confidence_value.setStyleSheet(f"color: {COLORS['neon_blue']}; font-size: 16px;")
+        conf_layout.addWidget(conf_title)
+        conf_layout.addWidget(self.confidence_bar)
+        conf_layout.addWidget(self.confidence_value)
+        layout.addWidget(conf_section)
+
+        stats_title = QLabel("ESTADISTICAS DE SESION")
+        stats_title.setObjectName("cardTitle")
+        layout.addWidget(stats_title)
+
+        self.stats_labels = {}
+        for key, label in [
+            ("total_alerts", "Total alertas"),
+            ("total_suspicious", "Total sospechosos"),
+            ("time_analyzed", "Tiempo analizado"),
+            ("avg_risk", "Riesgo promedio"),
+            ("captures", "Capturas"),
+            ("clips", "Clips"),
+        ]:
+            row = QHBoxLayout()
+            name_lbl = QLabel(label)
+            name_lbl.setStyleSheet(f"color: {COLORS['text_secondary']}; font-size: 10px;")
+            val_lbl = QLabel("0")
+            val_lbl.setStyleSheet(f"color: {COLORS['text_primary']}; font-size: 10px;")
+            val_lbl.setAlignment(Qt.AlignRight)
+            row.addWidget(name_lbl)
+            row.addWidget(val_lbl)
+            frame = QFrame()
+            frame.setLayout(row)
+            layout.addWidget(frame)
+            self.stats_labels[key] = val_lbl
+
         alerts_title = QLabel("ALERTAS DETECTADAS")
         alerts_title.setObjectName("cardTitle")
         self.alerts_list = QListWidget()
+        self.alerts_list.setMaximumHeight(120)
         self.alerts_list.addItem(self._placeholder_alert())
         layout.addWidget(alerts_title)
-        layout.addWidget(self.alerts_list, stretch=1)
+        layout.addWidget(self.alerts_list)
 
         log_title = QLabel("REGISTRO DE ACTIVIDADES")
         log_title.setObjectName("cardTitle")
         self.activity_log = QTextEdit()
         self.activity_log.setObjectName("activityLog")
         self.activity_log.setReadOnly(True)
-        self.activity_log.setMaximumHeight(140)
+        self.activity_log.setMaximumHeight(120)
         layout.addWidget(log_title)
         layout.addWidget(self.activity_log)
+
+        layout.addStretch()
+        scroll.setWidget(content)
+        outer.addWidget(scroll)
 
         self.log_activity("Sistema iniciado. Esperando fuente de video.", "INFO")
 
@@ -111,12 +170,7 @@ class SidebarPanel(QWidget):
         return item
 
     def set_risk_level(self, level: str) -> None:
-        """Actualiza el nivel de riesgo (BAJO, MEDIO, ALTO)."""
-        styles = {
-            "BAJO": "riskLow",
-            "MEDIO": "riskMedium",
-            "ALTO": "riskHigh",
-        }
+        styles = {"BAJO": "riskLow", "MEDIO": "riskMedium", "ALTO": "riskHigh"}
         key = level.upper()
         self.risk_card.set_value(key, styles.get(key, "riskLow"))
         obj_name = styles.get(key, "riskLow")
@@ -125,13 +179,28 @@ class SidebarPanel(QWidget):
         self.risk_card.value_label.style().polish(self.risk_card.value_label)
 
     def set_movement_intensity(self, value: int) -> None:
-        """Actualiza la barra de intensidad de movimiento (0-100)."""
         value = max(0, min(100, value))
         self.movement_bar.setValue(value)
         self.movement_value.setText(f"{value}%")
 
+    def set_prediction(self, label: str, confidence: float = 0.0) -> None:
+        self.prediction_card.set_value(label)
+        if label == "SOSPECHOSO":
+            self.prediction_card.value_label.setStyleSheet(f"color: {COLORS['danger']}; font-size: 18px; font-weight: bold;")
+        elif label == "NORMAL":
+            self.prediction_card.value_label.setStyleSheet(f"color: {COLORS['success']}; font-size: 18px; font-weight: bold;")
+        else:
+            self.prediction_card.value_label.setStyleSheet(f"color: {COLORS['text_muted']}; font-size: 14px;")
+
+        conf = int(confidence)
+        self.confidence_bar.setValue(conf)
+        self.confidence_value.setText(f"{conf}%")
+
+    def update_statistics(self, stats: dict) -> None:
+        for key, lbl in self.stats_labels.items():
+            lbl.setText(str(stats.get(key, "0")))
+
     def add_alert(self, message: str) -> None:
-        """Agrega una alerta a la lista."""
         if self.alerts_list.count() == 1:
             first = self.alerts_list.item(0)
             if first and "Sin alertas" in first.text():
@@ -146,7 +215,6 @@ class SidebarPanel(QWidget):
         self.alerts_list.addItem(self._placeholder_alert())
 
     def log_activity(self, message: str, level: str = "INFO") -> None:
-        """Registra una actividad en el log."""
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         color_map = {
             "INFO": COLORS["text_secondary"],
@@ -160,4 +228,3 @@ class SidebarPanel(QWidget):
             f'<span style="color:{color}">[{level}]</span> {message}'
         )
         self.activity_log.append(entry)
-
