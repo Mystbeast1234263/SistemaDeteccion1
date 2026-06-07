@@ -13,6 +13,8 @@ class VideoPanel(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("videoFrame")
+        self._cached_w = 0
+        self._cached_h = 0
         self._build_ui()
 
     def _build_ui(self) -> None:
@@ -21,6 +23,7 @@ class VideoPanel(QFrame):
         layout.setSpacing(8)
 
         header = QWidget()
+        header.setObjectName("videoHeader")
         header_layout = QVBoxLayout(header)
         header_layout.setContentsMargins(0, 0, 0, 0)
 
@@ -48,16 +51,24 @@ class VideoPanel(QFrame):
         if source_label:
             self.overlay_label.setText(source_label.upper())
 
-        w = max(self.display.width(), 640)
-        h = max(self.display.height(), 400)
-        pixmap = frame_to_pixmap(frame, w, h)
+        w = self.display.width()
+        h = self.display.height()
+        if w < 64 or h < 64:
+            w, h = 640, 400
 
+        if w != self._cached_w or h != self._cached_h:
+            self._cached_w = w
+            self._cached_h = h
+
+        pixmap = frame_to_pixmap(frame, w, h, fast=True)
         if not pixmap.isNull():
             self.display.setPixmap(pixmap)
             self.display.setText("")
 
     def clear_display(self, message: str = None) -> None:
         """Limpia el área de video."""
+        self._cached_w = 0
+        self._cached_h = 0
         self.display.setPixmap(QPixmap())
         self.display.setText(
             message
@@ -69,4 +80,3 @@ class VideoPanel(QFrame):
 
     def set_overlay(self, text: str) -> None:
         self.overlay_label.setText(text)
-

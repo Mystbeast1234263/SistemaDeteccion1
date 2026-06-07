@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Técnico — SIDACS</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 11pt;
+            line-height: 1.5;
+            text-align: justify;
+            color: #1a1a1a;
+            background-color: #ffffff;
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 40px 50px 60px;
+        }
+
+        h1, h2, h3, h4 {
+            text-align: left;
+            line-height: 1.3;
+            color: #0a1628;
+        }
+
+        h1 {
+            font-size: 18pt;
+            border-bottom: 2px solid #1e3a5f;
+            padding-bottom: 8px;
+            margin-top: 0;
+        }
+
+        h2 {
+            font-size: 14pt;
+            margin-top: 28px;
+            border-bottom: 1px solid #c5d4e8;
+            padding-bottom: 4px;
+        }
+
+        h3 {
+            font-size: 12pt;
+            margin-top: 20px;
+            color: #1e3a5f;
+        }
+
+        h4 {
+            font-size: 11pt;
+            margin-top: 14px;
+            color: #2a5080;
+        }
+
+        p, li { text-align: justify; }
+
+        ul, ol { padding-left: 24px; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0 18px;
+            font-size: 10pt;
+        }
+
+        th, td {
+            border: 1px solid #b0c4de;
+            padding: 8px 10px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th { background-color: #e8f0fa; font-weight: bold; }
+
+        code {
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 9.5pt;
+            background-color: #f4f7fb;
+            padding: 1px 4px;
+        }
+
+        pre {
+            background-color: #f4f7fb;
+            border: 1px solid #c5d4e8;
+            padding: 12px;
+            overflow-x: auto;
+            line-height: 1.4;
+            text-align: left;
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 9.5pt;
+        }
+
+        .meta {
+            font-size: 10pt;
+            color: #4a6278;
+            margin-bottom: 24px;
+        }
+
+        .note {
+            background-color: #f0f7ff;
+            border-left: 4px solid #00a8cc;
+            padding: 10px 14px;
+            margin: 14px 0;
+        }
+
+        .tech-box {
+            background-color: #f8fafc;
+            border: 1px solid #d0dce8;
+            padding: 12px 16px;
+            margin: 12px 0;
+        }
+
+        .tech-box strong { color: #1e3a5f; }
+
+        .toc a {
+            color: #1e3a5f;
+            text-decoration: none;
+        }
+
+        .toc a:hover { text-decoration: underline; }
+
+        .flow-diagram {
+            background-color: #f4f7fb;
+            border: 1px solid #c5d4e8;
+            padding: 16px;
+            font-family: Consolas, monospace;
+            font-size: 9pt;
+            line-height: 1.6;
+            text-align: left;
+            white-space: pre;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Manual Técnico Detallado — SIDACS</h1>
+<p class="meta">
+    <strong>Sistema:</strong> Sistema Inteligente de Detección y Análisis de Comportamientos Sospechosos<br>
+    <strong>Siglas:</strong> SIDACS<br>
+    <strong>Versión:</strong> 3.0.0-sprint3<br>
+    <strong>Ubicación:</strong> F:\emergentes\emergentes\SistemaDeteccion<br>
+    <strong>Archivo:</strong> manual_tecnico.html<br>
+    <strong>Fecha:</strong> 8 de junio de 2026
+</p>
+
+<div class="note">
+    <p>Este manual describe <strong>qué tecnología, librería, algoritmo o componente de Qt/OpenCV</strong> se utilizó para implementar cada función de la aplicación. Está pensado para desarrolladores, evaluadores técnicos o documentación de proyecto académico.</p>
+</div>
+
+<h2>Índice</h2>
+<ol class="toc">
+    <li><a href="#stack">Stack tecnológico general</a></li>
+    <li><a href="#arquitectura">Arquitectura de la aplicación</a></li>
+    <li><a href="#inicio">Punto de entrada y arranque</a></li>
+    <li><a href="#interfaz">Interfaz gráfica (PyQt5)</a></li>
+    <li><a href="#tema">Tema visual oscuro (QSS)</a></li>
+    <li><a href="#video-import">Importar y reproducir video</a></li>
+    <li><a href="#webcam">Captura de webcam</a></li>
+    <li><a href="#display">Mostrar frames en pantalla</a></li>
+    <li><a href="#monitoreo">Iniciar / detener monitoreo</a></li>
+    <li><a href="#optical-flow">Detección de movimiento — Flujo óptico Farneback</a></li>
+    <li><a href="#riesgo">Nivel de riesgo e intensidad</a></li>
+    <li><a href="#alertas">Alertas automáticas</a></li>
+    <li><a href="#timeline">Barra de tiempo y marcas de eventos</a></li>
+    <li><a href="#etiquetado">Etiquetado manual (Normal / Sospechoso)</a></li>
+    <li><a href="#dataset">Dataset automático y CSV</a></li>
+    <li><a href="#ml-train">Entrenamiento del modelo ML</a></li>
+    <li><a href="#ml-predict">Predicción en tiempo real</a></li>
+    <li><a href="#modelos-io">Guardar, cargar, importar y exportar modelos</a></li>
+    <li><a href="#evidencia">Capturas PNG y clips MP4 de evidencia</a></li>
+    <li><a href="#estadisticas">Estadísticas de sesión</a></li>
+    <li><a href="#sidebar">Panel lateral de análisis</a></li>
+    <li><a href="#controles">Barra de controles colapsable</a></li>
+    <li><a href="#rendimiento">Optimizaciones de rendimiento</a></li>
+    <li><a href="#archivos">Mapa de archivos y responsabilidades</a></li>
+    <li><a href="#constantes">Constantes configurables</a></li>
+</ol>
+
+<!-- ============================================================ -->
+<h2 id="stack">1. Stack tecnológico general</h2>
+
+<table>
+    <tr>
+        <th>Capa</th>
+        <th>Tecnología</th>
+        <th>Para qué se usa en SIDACS</th>
+    </tr>
+    <tr>
+        <td>Lenguaje</td>
+        <td>Python 3.10+</td>
+        <td>Toda la lógica de la aplicación, procesamiento de video, ML y UI.</td>
+    </tr>
+    <tr>
+        <td>Interfaz gráfica</td>
+        <td>PyQt5 (Qt 5)</td>
+        <td>Ventana principal, botones, sliders, paneles, señales/slots, temporizadores.</td>
+    </tr>
+    <tr>
+        <td>Visión por computadora</td>
+        <td>OpenCV (<code>opencv-python</code> ≥ 4.8)</td>
+        <td>Leer video/webcam, flujo óptico, dibujar vectores, guardar PNG/MP4.</td>
+    </tr>
+    <tr>
+        <td>Arrays numéricos</td>
+        <td>NumPy (<code>numpy</code> ≥ 1.24)</td>
+        <td>Frames como matrices, cálculos de magnitud/dirección del flujo óptico, entrada al ML.</td>
+    </tr>
+    <tr>
+        <td>Machine Learning</td>
+        <td>scikit-learn (<code>scikit-learn</code> ≥ 1.3)</td>
+        <td>RandomForestClassifier, train/test split, LabelEncoder, predict_proba.</td>
+    </tr>
+    <tr>
+        <td>Persistencia ML</td>
+        <td>pickle (stdlib)</td>
+        <td>Serializar y deserializar modelos entrenados en archivos <code>.pkl</code>.</td>
+    </tr>
+    <tr>
+        <td>Dataset</td>
+        <td>CSV (stdlib <code>csv</code>)</td>
+        <td>Almacenar muestras etiquetadas en <code>dataset/dataset.csv</code>.</td>
+    </tr>
+    <tr>
+        <td>Estilos UI</td>
+        <td>Qt Style Sheets (QSS)</td>
+        <td>Tema oscuro futurista en <code>styles/dark_theme.qss</code>.</td>
+    </tr>
+</table>
+
+<p>Dependencias declaradas en <code>requirements.txt</code>:</p>
+<pre>PyQt5>=5.15.0
+opencv-python>=4.8.0
+numpy>=1.24.0
+scikit-learn>=1.3.0</pre>
+
+<!-- ============================================================ -->
+<h2 id="arquitectura">2. Arquitectura de la aplicación</h2>
+
+<p>SIDACS sigue una arquitectura modular por capas. El hilo principal de Qt ejecuta la interfaz; el procesamiento de cada frame ocurre en el mismo hilo mediante señales <code>pyqtSignal</code> emitidas desde temporizadores (<code>QTimer</code>).</p>
+
+<div class="flow-diagram">main.py
+  └── QApplication + dark_theme.qss
+        └── ui/main_window.py  (MainWindow — orquestador central)
+              ├── ui/video_panel.py      → Muestra el frame en QLabel
+              ├── ui/control_bar.py      → Botones de acción
+              ├── ui/timeline_bar.py     → Slider + marcas de eventos
+              ├── ui/sidebar_panel.py    → Métricas, alertas, log
+              ├── video/player.py        → Reproducción de archivo
+              ├── video/webcam.py        → Captura en vivo
+              ├── video/optical_flow.py  → Análisis Farneback
+              ├── video/frame_utils.py   → BGR → QPixmap
+              └── ml/*                   → Dataset, ML, evidencia, stats</div>
+
+<p><strong>Patrón de comunicación:</strong> los módulos de video (<code>VideoPlayer</code>, <code>WebcamCapture</code>) emiten la señal <code>frame_ready</code> con un <code>numpy.ndarray</code> BGR. <code>MainWindow._on_frame_ready()</code> recibe ese frame y decide si solo mostrarlo o también analizarlo, etiquetarlo, predecir y actualizar la UI.</p>
+
+<!-- ============================================================ -->
+<h2 id="inicio">3. Punto de entrada y arranque</h2>
+
+<h3>Archivo: <code>main.py</code></h3>
+
+<table>
+    <tr><th>Función</th><th>Qué se usó</th><th>Detalle</th></tr>
+    <tr>
+        <td>Verificar dependencias</td>
+        <td><code>import</code> condicional</td>
+        <td>Comprueba PyQt5, cv2, numpy y sklearn antes de arrancar. Si falta alguna, muestra mensaje en consola y termina con <code>sys.exit(1)</code>.</td>
+    </tr>
+    <tr>
+        <td>Ruta del proyecto</td>
+        <td><code>pathlib.Path</code> + <code>sys.path.insert</code></td>
+        <td>Garantiza que los imports relativos (<code>ui.</code>, <code>video.</code>, <code>ml.</code>) funcionen aunque se ejecute desde otra carpeta.</td>
+    </tr>
+    <tr>
+        <td>Alta resolución</td>
+        <td><code>Qt.AA_EnableHighDpiScaling</code>, <code>Qt.AA_UseHighDpiPixmaps</code></td>
+        <td>Mejora la nitidez en pantallas HiDPI (Windows con escala 125 %, 150 %, etc.).</td>
+    </tr>
+    <tr>
+        <td>Cargar estilos</td>
+        <td><code>QApplication.setStyleSheet()</code></td>
+        <td>Lee el archivo <code>styles/dark_theme.qss</code> completo y lo aplica globalmente.</td>
+    </tr>
+    <tr>
+        <td>Bucle de eventos</td>
+        <td><code>app.exec_()</code></td>
+        <td>Loop estándar de Qt que procesa clics, timers y señales hasta cerrar la ventana.</td>
+    </tr>
+    <tr>
+        <td>Errores fatales</td>
+        <td><code>traceback</code> + <code>QMessageBox.critical</code></td>
+        <td>Si la app crashea al iniciar, muestra el stack trace en un cuadro de diálogo.</td>
+    </tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="interfaz">4. Interfaz gráfica (PyQt5)</h2>
+
+<h3>Archivo: <code>ui/main_window.py</code> — clase <code>MainWindow</code></h3>
+
+<table>
+    <tr><th>Componente Qt</th><th>Uso en SIDACS</th></tr>
+    <tr><td><code>QMainWindow</code></td><td>Ventana principal con título, tamaño mínimo 1280×720.</td></tr>
+    <tr><td><code>QSplitter</code> (horizontal)</td><td>Divide el área en panel izquierdo (video + controles) y panel derecho (sidebar). Proporción inicial 3:1.</td></tr>
+    <tr><td><code>QVBoxLayout</code> / <code>QHBoxLayout</code></td><td>Organización vertical del header, splitter y filas de botones.</td></tr>
+    <tr><td><code>QTimer</code></td><td>Reloj en el header que actualiza fecha/hora cada 1000 ms.</td></tr>
+    <tr><td><code>QFileDialog</code></td><td>Diálogos nativos del SO para importar video, cargar/importar/exportar modelos <code>.pkl</code>.</td></tr>
+    <tr><td><code>QInputDialog</code></td><td>Pide el nombre del archivo al guardar un modelo entrenado.</td></tr>
+    <tr><td><code>QMessageBox</code></td><td>Información, advertencias y errores (entrenamiento, etiquetado, historial).</td></tr>
+    <tr><td><code>pyqtSignal</code> / <code>connect()</code></td><td>Conecta botones, slider, reproductor y webcam al orquestador central.</td></tr>
+</table>
+
+<h3>Header (barra superior)</h3>
+<p>Implementado en <code>MainWindow._create_header()</code> con <code>QLabel</code> estilizados mediante <code>objectName</code> (<code>appTitle</code>, <code>appSubtitle</code>, <code>statusBadge</code>, <code>clockLabel</code>). El badge cambia de "EN LINEA" a "ANALISIS ACTIVO" cuando el monitoreo está encendido.</p>
+
+<!-- ============================================================ -->
+<h2 id="tema">5. Tema visual oscuro (QSS)</h2>
+
+<h3>Archivo: <code>styles/dark_theme.qss</code></h3>
+
+<p>Se usa <strong>Qt Style Sheets</strong>, sintaxis similar a CSS, para definir colores sin hardcodear estilos en cada widget.</p>
+
+<table>
+    <tr><th>Elemento</th><th>Selector QSS</th><th>Color / estilo</th></tr>
+    <tr><td>Fondo general</td><td><code>QMainWindow</code></td><td><code>#0a0e17</code></td></tr>
+    <tr><td>Paneles y header</td><td><code>#headerBar</code>, <code>#controlBar</code>, <code>#sidebarPanel</code></td><td><code>#0f1624</code></td></tr>
+    <tr><td>Tarjetas de métricas</td><td><code>QFrame#metricCard</code></td><td><code>#141c2e</code> con borde <code>#1e3a5f</code></td></tr>
+    <tr><td>Botón Importar</td><td><code>QPushButton#btnImport</code></td><td>Borde azul cian al hover</td></tr>
+    <tr><td>Botón Iniciar</td><td><code>QPushButton#btnStart</code></td><td>Verde neón <code>#00ff88</code></td></tr>
+    <tr><td>Botón Detener</td><td><code>QPushButton#btnStop</code></td><td>Rojo <code>#ff3366</code></td></tr>
+    <tr><td>Toggle Etiquetar / Modelo</td><td><code>QPushButton#btnToggleLabel:checked</code></td><td>Fondo activo <code>#1a2840</code>, borde cian</td></tr>
+    <tr><td>Barra de progreso movimiento</td><td><code>QProgressBar#movementBar::chunk</code></td><td>Gradiente rojo</td></tr>
+    <tr><td>Scroll del sidebar</td><td><code>QScrollArea#sidebarScroll</code></td><td>Fondo oscuro (evita el blanco por defecto de Qt en Windows)</td></tr>
+</table>
+
+<p>Los widgets asignan <code>setObjectName("nombre")</code> en Python; el QSS selecciona por ese nombre con <code>#nombre</code>.</p>
+
+<!-- ============================================================ -->
+<h2 id="video-import">6. Importar y reproducir video</h2>
+
+<h3>Para poner / reproducir un video se usó:</h3>
+
+<div class="tech-box">
+    <strong>OpenCV VideoCapture</strong> + <strong>QTimer</strong> + <strong>pyqtSignal frame_ready</strong>
+</div>
+
+<h4>Archivo: <code>video/player.py</code> — clase <code>VideoPlayer</code></h4>
+
+<table>
+    <tr><th>Operación</th><th>API / clase usada</th><th>Descripción técnica</th></tr>
+    <tr>
+        <td>Cargar archivo</td>
+        <td><code>cv2.VideoCapture(path)</code></td>
+        <td>Abre MP4, AVI, MKV, MOV, WMV. Si <code>isOpened()</code> falla, emite señal <code>error_occurred</code>.</td>
+    </tr>
+    <tr>
+        <td>Obtener FPS y duración</td>
+        <td><code>CAP_PROP_FPS</code>, <code>CAP_PROP_FRAME_COUNT</code></td>
+        <td>Calcula duración = total_frames / fps. Si FPS es 0, usa <code>DEFAULT_FPS = 30</code>.</td>
+    </tr>
+    <tr>
+        <td>Reducir latencia</td>
+        <td><code>CAP_PROP_BUFFERSIZE = 1</code></td>
+        <td>Evita acumular frames en buffer interno de OpenCV; respuesta más inmediata al seek.</td>
+    </tr>
+    <tr>
+        <td>Reproducir</td>
+        <td><code>QTimer</code> con intervalo <code>1000 / fps</code> ms</td>
+        <td>Cada tick llama <code>_read_next_frame()</code> → <code>capture.read()</code> → emite <code>frame_ready</code>.</td>
+    </tr>
+    <tr>
+        <td>Pausar / detener</td>
+        <td><code>QTimer.stop()</code> + <code>capture.release()</code></td>
+        <td>Libera el recurso de video al cambiar de fuente o cerrar la app.</td>
+    </tr>
+    <tr>
+        <td>Seek (saltar en el tiempo)</td>
+        <td><code>CAP_PROP_POS_FRAMES</code> + <code>read()</code></td>
+        <td>Convierte segundos a índice de frame, posiciona el cursor y lee un frame para mostrarlo de inmediato.</td>
+    </tr>
+    <tr>
+        <td>Fin de video</td>
+        <td>Señal <code>playback_finished</code></td>
+        <td>Se emite cuando <code>read()</code> devuelve <code>False</code>; la ventana principal detiene el análisis.</td>
+    </tr>
+    <tr>
+        <td>Posición en timeline</td>
+        <td>Señal <code>position_changed(current, total)</code></td>
+        <td>Notifica segundos actuales y duración total para sincronizar el slider.</td>
+    </tr>
+</table>
+
+<h4>Flujo al importar (desde <code>MainWindow._on_import_video</code>)</h4>
+<ol>
+    <li><code>QFileDialog.getOpenFileName()</code> — diálogo nativo de Windows para elegir archivo.</li>
+    <li><code>VideoPlayer.load(path)</code> — abre con OpenCV.</li>
+    <li><code>cv2.VideoCapture(path).read()</code> — lee el primer frame para previsualización sin iniciar reproducción.</li>
+    <li><code>TimelineBar.set_duration()</code> — configura el slider con la duración del clip.</li>
+    <li>Se guarda <code>_last_frame</code> para permitir etiquetado antes de iniciar monitoreo.</li>
+</ol>
+
+<!-- ============================================================ -->
+<h2 id="webcam">7. Captura de webcam</h2>
+
+<h3>Archivo: <code>video/webcam.py</code> — clase <code>WebcamCapture</code></h3>
+
+<table>
+    <tr><th>Aspecto</th><th>Tecnología</th><th>Detalle</th></tr>
+    <tr>
+        <td>Apertura de cámara</td>
+        <td><code>cv2.VideoCapture(index, cv2.CAP_DSHOW)</code></td>
+        <td>En Windows se intenta primero DirectShow para mayor compatibilidad con webcams USB.</td>
+    </tr>
+    <tr>
+        <td>Fallback</td>
+        <td><code>cv2.VideoCapture(index)</code></td>
+        <td>Si DirectShow falla, reintenta con el backend por defecto de OpenCV.</td>
+    </tr>
+    <tr>
+        <td>Índice de cámara</td>
+        <td><code>WEBCAM_INDEX = 0</code></td>
+        <td>Primera cámara del sistema (configurable en <code>utils/constants.py</code>).</td>
+    </tr>
+    <tr>
+        <td>Frecuencia de captura</td>
+        <td><code>QTimer</code> a 30 FPS</td>
+        <td><code>DEFAULT_FPS = 30</code> → intervalo de 33 ms entre lecturas.</td>
+    </tr>
+    <tr>
+        <td>Entrega de frames</td>
+        <td>Señal <code>frame_ready</code></td>
+        <td>Misma señal que el reproductor de archivo; <code>MainWindow</code> trata ambas fuentes de forma unificada.</td>
+    </tr>
+    <tr>
+        <td>Señales de estado</td>
+        <td><code>started</code>, <code>stopped</code>, <code>error_occurred</code></td>
+        <td>Actualizan overlay del video y botón "Activar Webcam" / "Detener Webcam".</td>
+    </tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="display">8. Mostrar frames en pantalla</h2>
+
+<h3>Para mostrar el video en el panel central se usó:</h3>
+
+<div class="tech-box">
+    <strong>NumPy BGR → OpenCV cvtColor → QImage → QPixmap → QLabel</strong>
+</div>
+
+<h4>Archivo: <code>video/frame_utils.py</code></h4>
+
+<table>
+    <tr><th>Paso</th><th>Función / API</th></tr>
+    <tr><td>1. Escalar si es necesario</td><td><code>cv2.resize()</code> con <code>INTER_AREA</code> o <code>INTER_LINEAR</code> antes de convertir a Qt (más eficiente que escalar solo en Qt).</td></tr>
+    <tr><td>2. Convertir color</td><td><code>cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)</code> — OpenCV usa BGR; Qt espera RGB.</td></tr>
+    <tr><td>3. Crear imagen Qt</td><td><code>QImage(data, w, h, bytesPerLine, QImage.Format_RGB888)</code></td></tr>
+    <tr><td>4. Escalar al QLabel</td><td><code>QPixmap.fromImage().scaled(w, h, Qt.KeepAspectRatio, Qt.FastTransformation)</code></td></tr>
+</table>
+
+<h4>Archivo: <code>ui/video_panel.py</code> — clase <code>VideoPanel</code></h4>
+<ul>
+    <li><code>QLabel</code> con <code>objectName="videoDisplay"</code> como superficie de renderizado.</li>
+    <li>Cache de dimensiones (<code>_cached_w</code>, <code>_cached_h</code>) para evitar recalcular en cada frame idéntico.</li>
+    <li><code>clear_display()</code> usa <code>QPixmap()</code> vacío (no <code>None</code>) para evitar crash al detener webcam.</li>
+    <li>Overlay superior con texto de estado ("VIDEO CARGADO", "ANALISIS ACTIVO", etc.).</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="monitoreo">9. Iniciar / detener monitoreo</h2>
+
+<h3>Archivo: <code>ui/main_window.py</code></h3>
+
+<p><strong>Iniciar Monitoreo</strong> activa el pipeline completo de análisis sobre la fuente actual (archivo o webcam):</p>
+<ol>
+    <li>Si es archivo: <code>video_player.seek_start()</code> + <code>video_player.play()</code>.</li>
+    <li>Marca <code>_monitoring_active = True</code>.</li>
+    <li>Reinicia: <code>OpticalFlowAnalyzer</code>, <code>SegmentTracker</code>, <code>SessionStatistics</code>, buffer de evidencia, alertas del sidebar.</li>
+    <li>A partir de aquí, cada <code>frame_ready</code> pasa por flujo óptico, ML, timeline y estadísticas.</li>
+</ol>
+
+<p><strong>Detener Análisis</strong> pausa el reproductor, detiene webcam si está activa, pone <code>_monitoring_active = False</code> y restaura el badge "EN LINEA". Los frames siguen mostrándose si el video continúa en pausa manual, pero ya no se analizan.</p>
+
+<p><strong>Reproducción sin monitoreo:</strong> tras importar un video, el usuario puede mover el slider y ver frames sin análisis. Esto permite navegar y usar <strong>Etiquetar</strong> en cualquier posición.</p>
+
+<!-- ============================================================ -->
+<h2 id="optical-flow">10. Detección de movimiento — Flujo óptico Farneback</h2>
+
+<h3>Para detectar movimiento se usó:</h3>
+
+<div class="tech-box">
+    <strong>cv2.calcOpticalFlowFarneback</strong> (algoritmo de Gunnar Farneback, OpenCV)
+</div>
+
+<h4>Archivo: <code>video/optical_flow.py</code> — clase <code>OpticalFlowAnalyzer</code></h4>
+
+<h4>Pipeline por frame</h4>
+<ol>
+    <li><strong>Redimensionar</strong> el frame a máximo 640×360 (<code>FLOW_PROCESS_WIDTH/HEIGHT</code>) para procesar más rápido.</li>
+    <li><strong>Convertir a escala de grises</strong> con <code>cv2.cvtColor(..., COLOR_BGR2GRAY)</code>.</li>
+    <li><strong>Suavizar</strong> con <code>cv2.GaussianBlur(5×5)</code> para reducir ruido.</li>
+    <li><strong>Comparar</strong> con el frame gris anterior almacenado en <code>_prev_gray</code>.</li>
+    <li><strong>Calcular flujo denso</strong> con Farneback:
+        <pre>cv2.calcOpticalFlowFarneback(prev_gray, gray, None,
+    pyr_scale=0.5, levels=3, winsize=15,
+    iterations=3, poly_n=5, poly_sigma=1.2, flags=0)</pre>
+    </li>
+    <li><strong>Magnitud y ángulo</strong> con <code>cv2.cartToPolar(fx, fy)</code>.</li>
+    <li><strong>Filtrar píxeles activos</strong> donde magnitud &gt; <code>FLOW_MIN_MAGNITUDE (0.4)</code>.</li>
+    <li><strong>Suavizado temporal</strong> de intensidad con media exponencial (<code>FLOW_SMOOTH_ALPHA = 0.35</code>).</li>
+    <li><strong>Overlay visual:</strong> flechas con <code>cv2.arrowedLine</code> en grilla cada 16 px; HUD con <code>cv2.putText</code>.</li>
+</ol>
+
+<h4>Dataclass de salida: <code>MotionFeatures</code></h4>
+<table>
+    <tr><th>Campo</th><th>Cómo se calcula</th></tr>
+    <tr><td><code>intensidad_movimiento</code></td><td>0–100, derivada de magnitud promedio × escala 12, suavizada.</td></tr>
+    <tr><td><code>magnitud_promedio</code></td><td>Media de magnitud en píxeles activos.</td></tr>
+    <tr><td><code>direccion_promedio</code></td><td>Media circular de ángulos en grados (<code>arctan2</code> de senos/cosenos medios).</td></tr>
+    <tr><td><code>cantidad_movimiento</code></td><td>Porcentaje de píxeles activos sobre el total.</td></tr>
+    <tr><td><code>nivel_riesgo</code></td><td>BAJO / MEDIO / ALTO según umbrales de intensidad.</td></tr>
+    <tr><td><code>motion_detected</code></td><td><code>True</code> si intensidad ≥ 8 y hay píxeles activos.</td></tr>
+    <tr><td><code>annotated_frame</code></td><td>Frame BGR original con vectores y HUD dibujados.</td></tr>
+</table>
+
+<h4>Colores de vectores (BGR en OpenCV)</h4>
+<ul>
+    <li>Magnitud &gt; 4.0 → rojo intenso</li>
+    <li>Magnitud &gt; 2.0 → naranja</li>
+    <li>Resto → amarillo</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="riesgo">11. Nivel de riesgo e intensidad</h2>
+
+<p>Definido en <code>OpticalFlowAnalyzer._risk_from_intensity()</code> usando constantes de <code>utils/constants.py</code>:</p>
+
+<table>
+    <tr><th>Intensidad (0–100)</th><th>Nivel</th><th>Constante</th></tr>
+    <tr><td>0 – 25</td><td>BAJO</td><td>—</td></tr>
+    <tr><td>26 – 55</td><td>MEDIO</td><td><code>RISK_MEDIUM_MIN = 26</code></td></tr>
+    <tr><td>56 – 100</td><td>ALTO</td><td><code>RISK_HIGH_MIN = 56</code></td></tr>
+</table>
+
+<p>En el sidebar se muestra con <code>QProgressBar#movementBar</code> (intensidad) y <code>MetricCard</code> con colores QSS según riesgo (<code>riskLow</code>, <code>riskMedium</code>, <code>riskHigh</code>).</p>
+
+<!-- ============================================================ -->
+<h2 id="alertas">12. Alertas automáticas</h2>
+
+<h3>Archivo: <code>ui/main_window.py</code> — método <code>_update_motion_metrics()</code></h3>
+
+<table>
+    <tr><th>Umbral de intensidad</th><th>Constante</th><th>Mensaje generado</th></tr>
+    <tr><td>≥ 15 %</td><td><code>ALERT_MOTION_MIN</code></td><td>"Movimiento detectado"</td></tr>
+    <tr><td>≥ 26 %</td><td><code>ALERT_ELEVATED_MIN</code></td><td>"Actividad elevada"</td></tr>
+    <tr><td>≥ 56 %</td><td><code>ALERT_INTENSE_MIN</code></td><td>"Movimiento intenso (riesgo ALTO)"</td></tr>
+</table>
+
+<p><strong>Cooldown:</strong> <code>ALERT_COOLDOWN_SEC = 4.0</code> segundos entre alertas para no saturar la lista ni el log.</p>
+
+<p><strong>Componentes UI usados:</strong></p>
+<ul>
+    <li><code>QListWidget</code> — lista "Alertas detectadas" en el sidebar.</li>
+    <li><code>QTextEdit#activityLog</code> — registro HTML con timestamps coloreados.</li>
+    <li><code>SessionStatistics.add_alert()</code> — contador de alertas en estadísticas de sesión.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="timeline">13. Barra de tiempo y marcas de eventos</h2>
+
+<h3>Para la barra de tiempo y las marcas se usó:</h3>
+
+<div class="tech-box">
+    <strong>QSlider personalizado</strong> + <strong>QPainter</strong> + <strong>SegmentTracker</strong>
+</div>
+
+<h4>Archivo: <code>ui/timeline_bar.py</code></h4>
+
+<table>
+    <tr><th>Elemento</th><th>Implementación</th></tr>
+    <tr>
+        <td>Slider de progreso</td>
+        <td>Clase <code>TimelineSlider</code> hereda de <code>QSlider(Qt.Horizontal)</code>. Rango en milisegundos (segundos × 1000) para precisión al hacer seek.</td>
+    </tr>
+    <tr>
+        <td>Etiquetas de tiempo</td>
+        <td>Dos <code>QLabel</code> con formato <code>MM:SS</code> o <code>HH:MM:SS</code>.</td>
+    </tr>
+    <tr>
+        <td>Estilo del groove</td>
+        <td>QSS en <code>QSlider#timelineSlider</code> — pista oscura, handle cian, sub-page azul.</td>
+    </tr>
+    <tr>
+        <td>Seek del usuario</td>
+        <td>Señales <code>sliderMoved</code> (actualiza tiempo visual) y <code>sliderReleased</code> → emite <code>seek_requested(seconds)</code>.</td>
+    </tr>
+    <tr>
+        <td>Sincronización con video</td>
+        <td><code>VideoPlayer.position_changed</code> → <code>TimelineBar.set_position()</code>.</td>
+    </tr>
+</table>
+
+<h4>Para pintar las marcas se usó <code>paintEvent()</code> con <code>QPainter</code></h4>
+<p>Después de dibujar el slider base (<code>super().paintEvent()</code>), se itera sobre la lista de segmentos y se dibuja un rectángulo vertical en la posición proporcional:</p>
+<pre>ratio = segment.time_sec / duration
+x = track_left + ratio * track_width
+painter.drawRect(x - 2, track_y - h/2, 4, h)</pre>
+
+<h4>Colores de marcas (<code>SegmentType</code>)</h4>
+<table>
+    <tr><th>Tipo</th><th>Color</th><th>Altura</th><th>Condición de creación</th></tr>
+    <tr><td>MEDIUM</td><td><code>#ffaa00</code> (amarillo)</td><td>6 px</td><td>Riesgo MEDIO detectado por flujo óptico</td></tr>
+    <tr><td>HIGH</td><td><code>#ff3366</code> (rojo)</td><td>8 px</td><td>Riesgo ALTO</td></tr>
+    <tr><td>SUSPICIOUS</td><td><code>#ff0033</code> (rojo intenso)</td><td>10 px</td><td>Predicción ML = SOSPECHOSO con confianza ≥ 85 %</td></tr>
+</table>
+
+<h4>Archivo: <code>ml/segment_tracker.py</code> — clase <code>SegmentTracker</code></h4>
+<ul>
+    <li>Recibe tiempo en segundos, nivel de riesgo, etiqueta ML y confianza en cada frame analizado.</li>
+    <li><strong>Anti-duplicados:</strong> <code>min_gap = 2.0</code> segundos entre marcas en la misma zona temporal.</li>
+    <li>Devuelve objetos <code>TimelineSegment</code>; la lista se pasa a <code>TimelineSlider.set_segments()</code> que fuerza <code>update()</code> para repintar.</li>
+</ul>
+
+<h4>Clic en marcas</h4>
+<p><code>TimelineSlider.mousePressEvent()</code> detecta si el clic está a ≤ 12 px de una marca y emite <code>marker_clicked(seconds)</code> → la ventana principal hace seek a ese instante del video.</p>
+
+<!-- ============================================================ -->
+<h2 id="etiquetado">14. Etiquetado manual (Normal / Sospechoso)</h2>
+
+<h3>Para etiquetar frames se usó:</h3>
+
+<div class="tech-box">
+    <strong>Botones colapsables PyQt5</strong> + <code>DatasetManager.append_manual()</code> + análisis bajo demanda con Farneback
+</div>
+
+<h4>Interfaz — <code>ui/control_bar.py</code></h4>
+<ul>
+    <li>Botón toggle <strong>"Etiquetar"</strong> (<code>QPushButton</code> con <code>setCheckable(True)</code>).</li>
+    <li>Al activarse, muestra panel con botones <strong>"Normal"</strong> y <strong>"Sospechoso"</strong>.</li>
+    <li>Se habilita cuando hay video cargado o webcam activa con al menos un frame visible (<code>set_labeling_available()</code>).</li>
+</ul>
+
+<h4>Lógica — <code>MainWindow._on_manual_label()</code></h4>
+<ol>
+    <li>Obtiene características con <code>_features_for_labeling()</code>:
+        <ul>
+            <li>Si hay monitoreo activo: usa <code>_last_features</code> del último análisis.</li>
+            <li>Si el video está pausado o sin monitoreo: ejecuta <code>OpticalFlowAnalyzer.process(_last_frame)</code> en el frame visible actual.</li>
+        </ul>
+    </li>
+    <li>Guarda en CSV con etiqueta elegida por el usuario (corrige al etiquetado automático heurístico).</li>
+    <li>Actualiza sidebar con intensidad y riesgo del frame etiquetado.</li>
+</ol>
+
+<p><strong>Caso de uso:</strong> importar video → navegar con el slider → abrir Etiquetar → marcar Normal o Sospechoso en frames clave → entrenar modelo con dataset corregido.</p>
+
+<!-- ============================================================ -->
+<h2 id="dataset">15. Dataset automático y CSV</h2>
+
+<h3>Archivo: <code>ml/dataset_manager.py</code> — clase <code>DatasetManager</code></h3>
+
+<table>
+    <tr><th>Función</th><th>Tecnología</th><th>Detalle</th></tr>
+    <tr>
+        <td>Almacenamiento</td>
+        <td>CSV UTF-8</td>
+        <td>Archivo <code>dataset/dataset.csv</code> con columnas definidas en <code>DATASET_COLUMNS</code>.</td>
+    </tr>
+    <tr>
+        <td>Registro automático</td>
+        <td><code>append_auto()</code></td>
+        <td>Cada <code>DATASET_AUTO_INTERVAL = 30</code> frames durante monitoreo. Etiqueta heurística: ALTO o intensidad ≥ 56 → sospechoso; resto → normal.</td>
+    </tr>
+    <tr>
+        <td>Registro manual</td>
+        <td><code>append_manual()</code></td>
+        <td>Etiqueta explícita del operador; sobrescribe la lógica heurística para esa muestra.</td>
+    </tr>
+    <tr>
+        <td>Lectura para entrenar</td>
+        <td><code>csv.DictReader</code></td>
+        <td>Filtra filas con etiqueta <code>normal</code> o <code>sospechoso</code>.</td>
+    </tr>
+</table>
+
+<h4>Columnas del CSV</h4>
+<pre>timestamp, intensidad_movimiento, magnitud_promedio, direccion_promedio,
+cantidad_movimiento, nivel_riesgo, etiqueta</pre>
+
+<!-- ============================================================ -->
+<h2 id="ml-train">16. Entrenamiento del modelo ML</h2>
+
+<h3>Para entrenar el modelo se usó:</h3>
+
+<div class="tech-box">
+    <strong>scikit-learn RandomForestClassifier</strong> + <strong>train_test_split</strong> + <strong>LabelEncoder</strong> + <strong>pickle</strong>
+</div>
+
+<h4>Archivo: <code>ml/model_trainer.py</code> — clase <code>ModelTrainer</code></h4>
+
+<table>
+    <tr><th>Paso</th><th>API scikit-learn / Python</th></tr>
+    <tr><td>Validación de datos</td><td>Mínimo 4 muestras; ambas clases presentes; ≥ 2 muestras por clase.</td></tr>
+    <tr><td>Vector de características (5 valores)</td><td>intensidad, magnitud, dirección, cantidad, riesgo codificado (0/1/2).</td></tr>
+    <tr><td>Codificación de etiquetas</td><td><code>LabelEncoder</code> con clases <code>normal</code> y <code>sospechoso</code>.</td></tr>
+    <tr><td>División train/test</td><td><code>train_test_split(..., test_size=0.2, stratify=y)</code> solo si hay ≥ 10 muestras y ≥ 2 por clase; si no, entrena con todo el set.</td></tr>
+    <tr><td>Algoritmo</td><td><code>RandomForestClassifier(n_estimators=50, max_depth=8, n_jobs=-1)</code></td></tr>
+    <tr><td>Métrica</td><td><code>model.score(X_test, y_test)</code> → precisión mostrada al usuario.</td></tr>
+    <tr><td>Guardar en memoria</td><td>Atributo <code>self.model</code> hasta que el usuario pulse Guardar.</td></tr>
+</table>
+
+<p>Al entrenar, la ventana principal <strong>pausa el video</strong> temporalmente para evitar conflictos de recursos y restaura la reproducción al terminar.</p>
+
+<!-- ============================================================ -->
+<h2 id="ml-predict">17. Predicción en tiempo real</h2>
+
+<h3>Archivo: <code>ml/predictor.py</code> — clase <code>BehaviorPredictor</code></h3>
+
+<table>
+    <tr><th>Aspecto</th><th>Implementación</th></tr>
+    <tr><td>Entrada</td><td>Objeto <code>MotionFeatures</code> del flujo óptico.</td></tr>
+    <tr><td>Vector X</td><td>Array NumPy 1×5 con las mismas 5 características del entrenamiento.</td></tr>
+    <tr><td>Predicción</td><td><code>model.predict_proba(X)</code> → índice de mayor probabilidad.</td></tr>
+    <tr><td>Etiqueta legible</td><td><code>label_encoder.inverse_transform()</code> → "NORMAL" o "SOSPECHOSO".</td></tr>
+    <tr><td>Confianza</td><td>Probabilidad máxima × 100, mostrada en <code>QProgressBar</code> del sidebar.</td></tr>
+    <tr><td>Cooldown de log</td><td><code>SUSPICIOUS_LOG_COOLDOWN_SEC = 5</code> — evita escribir "Comportamiento sospechoso" en cada frame.</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="modelos-io">18. Guardar, cargar, importar y exportar modelos</h2>
+
+<h3>Interfaz — botón toggle "Modelo" en <code>ui/control_bar.py</code></h3>
+<p>Despliega: Entrenar | Guardar | Cargar | Importar | Exportar.</p>
+
+<h3>Archivo: <code>ml/model_trainer.py</code></h3>
+
+<table>
+    <tr><th>Acción</th><th>Tecnología</th><th>Archivo / diálogo</th></tr>
+    <tr>
+        <td>Guardar</td>
+        <td><code>pickle.dump()</code> con dict {model, label_encoder, metrics}</td>
+        <td><code>models/*.pkl</code> — nombre via <code>QInputDialog</code></td>
+    </tr>
+    <tr>
+        <td>Cargar</td>
+        <td><code>pickle.load()</code></td>
+        <td><code>QFileDialog</code> filtrando <code>*.pkl</code> en carpeta <code>models/</code></td>
+    </tr>
+    <tr>
+        <td>Importar</td>
+        <td><code>shutil.copy2()</code> + <code>load()</code></td>
+        <td>Copia modelo externo a <code>models/</code> y lo carga en memoria</td>
+    </tr>
+    <tr>
+        <td>Exportar</td>
+        <td><code>shutil.copy2()</code></td>
+        <td><code>QFileDialog.getSaveFileName()</code> — copia el .pkl a ruta elegida</td>
+    </tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="evidencia">19. Capturas PNG y clips MP4 de evidencia</h2>
+
+<h3>Archivo: <code>ml/evidence_manager.py</code></h3>
+
+<h4>Buffer circular — clase <code>FrameRingBuffer</code></h4>
+<table>
+    <tr><th>Aspecto</th><th>Implementación</th></tr>
+    <tr><td>Estructura</td><td><code>collections.deque</code> con <code>maxlen</code> calculado según FPS y segundos de buffer.</td></tr>
+    <tr><td>Capacidad</td><td>~6 segundos antes del evento (<code>CLIP_BEFORE_SEC = 5</code> + margen).</td></tr>
+    <tr><td>Almacenamiento</td><td><code>frame.copy()</code> para no mutar el array original.</td></tr>
+</table>
+
+<h4>Captura PNG automática</h4>
+<ul>
+    <li>Condición: confianza ML ≥ <code>EVIDENCE_SCREENSHOT_CONF (85 %)</code>.</li>
+    <li>API: <code>cv2.imwrite(path, frame)</code>.</li>
+    <li>Carpeta: <code>evidence/</code>.</li>
+    <li>Cooldown: 3 segundos entre capturas.</li>
+    <li>Nombre: timestamp <code>YYYY-MM-DD_HH-MM-SS.png</code>.</li>
+</ul>
+
+<h4>Clip MP4 automático</h4>
+<ul>
+    <li>Condición: confianza ≥ <code>EVIDENCE_CLIP_CONF (90 %)</code>.</li>
+    <li>Inicio: toma frames previos del ring buffer + continúa grabando <code>CLIP_AFTER_SEC = 5</code> segundos.</li>
+    <li>API: <code>cv2.VideoWriter</code> con fourcc <code>'mp4v'</code>.</li>
+    <li>Carpeta: <code>evidence/clips/</code>.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="estadisticas">20. Estadísticas de sesión</h2>
+
+<h3>Archivo: <code>ml/statistics.py</code> — dataclass <code>SessionStatistics</code></h3>
+
+<table>
+    <tr><th>Métrica en UI</th><th>Origen</th></tr>
+    <tr><td>Total alertas</td><td><code>add_alert()</code> en cada alerta de movimiento</td></tr>
+    <tr><td>Total sospechosos</td><td><code>add_suspicious()</code> con cooldown de 5 s</td></tr>
+    <tr><td>Tiempo analizado</td><td>Suma de <code>1/fps</code> por frame procesado</td></tr>
+    <tr><td>Riesgo promedio</td><td>Media de intensidades acumuladas</td></tr>
+    <tr><td>Capturas</td><td>Incremento al guardar PNG</td></tr>
+    <tr><td>Clips</td><td>Incremento al finalizar MP4</td></tr>
+</table>
+
+<p>Se muestran en filas <code>QFrame#statRow</code> del sidebar, actualizadas cada <code>UI_UPDATE_INTERVAL = 3</code> frames.</p>
+
+<!-- ============================================================ -->
+<h2 id="sidebar">21. Panel lateral de análisis</h2>
+
+<h3>Archivo: <code>ui/sidebar_panel.py</code> — clase <code>SidebarPanel</code></h3>
+
+<table>
+    <tr><th>Sección</th><th>Widgets Qt</th></tr>
+    <tr><td>Scroll general</td><td><code>QScrollArea</code> + <code>QWidget#sidebarContent</code> — fondo oscuro coherente con la app</td></tr>
+    <tr><td>Nivel de riesgo</td><td><code>MetricCard</code> (QFrame + QLabel)</td></tr>
+    <tr><td>Intensidad</td><td><code>QProgressBar#movementBar</code> + QLabel porcentaje</td></tr>
+    <tr><td>Predicción ML</td><td><code>MetricCard</code> con objectName dinámico (predictionNormal / Suspicious / Muted)</td></tr>
+    <tr><td>Confianza</td><td><code>QProgressBar#confidenceBar</code></td></tr>
+    <tr><td>Estadísticas</td><td>6 filas QFrame#statRow con pares label/valor</td></tr>
+    <tr><td>Alertas</td><td><code>QListWidget</code> con inserción al inicio, máx. 50 ítems</td></tr>
+    <tr><td>Log de actividades</td><td><code>QTextEdit</code> solo lectura, HTML inline para colores por nivel (INFO/WARN/ERROR/OK)</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="controles">22. Barra de controles colapsable</h2>
+
+<h3>Archivo: <code>ui/control_bar.py</code></h3>
+
+<p>Diseño en dos filas para reducir carga visual:</p>
+
+<table>
+    <tr><th>Fila</th><th>Botones visibles siempre</th><th>Panel colapsable</th></tr>
+    <tr>
+        <td>1</td>
+        <td>Importar Video, Activar Webcam, Iniciar Monitoreo, Detener Análisis, Historial</td>
+        <td>—</td>
+    </tr>
+    <tr>
+        <td>2</td>
+        <td>Etiquetar (toggle), Modelo (toggle)</td>
+        <td>Normal/Sospechoso | Entrenar/Guardar/Cargar/Importar/Exportar</td>
+    </tr>
+</table>
+
+<p><strong>Mecanismo:</strong> <code>QPushButton.setCheckable(True)</code> + señal <code>toggled(bool)</code> conectada a <code>QWidget.setVisible()</code> del panel hijo. Estilos de estado activo en QSS con pseudo-estado <code>:checked</code>.</p>
+
+<!-- ============================================================ -->
+<h2 id="rendimiento">23. Optimizaciones de rendimiento</h2>
+
+<table>
+    <tr><th>Optimización</th><th>Constante / ubicación</th><th>Efecto</th></tr>
+    <tr><td>Buffer video mínimo</td><td><code>VIDEO_BUFFER_SIZE = 1</code></td><td>Menos frames acumulados en OpenCV</td></tr>
+    <tr><td>Resize antes de Qt</td><td><code>frame_utils.frame_to_pixmap()</code></td><td>Menos píxeles en conversión BGR→RGB→QPixmap</td></tr>
+    <tr><td>FastTransformation</td><td><code>Qt.FastTransformation</code></td><td>Escalado más rápido en reproducción</td></tr>
+    <tr><td>UI cada N frames</td><td><code>UI_UPDATE_INTERVAL = 3</code></td><td>Sidebar no se redibuja en cada frame</td></tr>
+    <tr><td>Evidencia cada N frames</td><td><code>EVIDENCE_FRAME_INTERVAL = 2</code></td><td>Menos copias de frame al buffer</td></tr>
+    <tr><td>Procesamiento reducido</td><td>640×360 en Farneback</td><td>Análisis sobre imagen pequeña, overlay escalado al original</td></tr>
+    <tr><td>Pausa en operaciones ML</td><td><code>main_window._on_train/save/load</code></td><td>Video pausado mientras se entrena o serializa modelo</td></tr>
+    <tr><td>Cooldown logs</td><td>4 s alertas, 5 s sospechoso</td><td>Evita saturación del log y lista de alertas</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="archivos">24. Mapa de archivos y responsabilidades</h2>
+
+<table>
+    <tr><th>Archivo</th><th>Responsabilidad técnica</th></tr>
+    <tr><td><code>main.py</code></td><td>Entrada, dependencias, QApplication, QSS global</td></tr>
+    <tr><td><code>ui/main_window.py</code></td><td>Orquestación: señales, monitoreo, ML, alertas, seek</td></tr>
+    <tr><td><code>ui/control_bar.py</code></td><td>Botones de acción y paneles colapsables</td></tr>
+    <tr><td><code>ui/video_panel.py</code></td><td>QLabel renderizado de video</td></tr>
+    <tr><td><code>ui/timeline_bar.py</code></td><td>QSlider + QPainter marcas + seek</td></tr>
+    <tr><td><code>ui/sidebar_panel.py</code></td><td>Métricas, alertas, log, estadísticas</td></tr>
+    <tr><td><code>video/player.py</code></td><td>VideoCapture + QTimer reproducción</td></tr>
+    <tr><td><code>video/webcam.py</code></td><td>VideoCapture cámara + QTimer</td></tr>
+    <tr><td><code>video/optical_flow.py</code></td><td>Farneback, MotionFeatures, overlay OpenCV</td></tr>
+    <tr><td><code>video/frame_utils.py</code></td><td>BGR NumPy → QPixmap</td></tr>
+    <tr><td><code>video/frame_buffer.py</code></td><td>Reexport de FrameRingBuffer</td></tr>
+    <tr><td><code>ml/dataset_manager.py</code></td><td>CSV dataset manual y automático</td></tr>
+    <tr><td><code>ml/model_trainer.py</code></td><td>RandomForest, pickle, import/export</td></tr>
+    <tr><td><code>ml/predictor.py</code></td><td>predict_proba en tiempo real</td></tr>
+    <tr><td><code>ml/segment_tracker.py</code></td><td>Marcas temporales para timeline</td></tr>
+    <tr><td><code>ml/evidence_manager.py</code></td><td>PNG, MP4, deque buffer</td></tr>
+    <tr><td><code>ml/statistics.py</code></td><td>Contadores de sesión</td></tr>
+    <tr><td><code>utils/constants.py</code></td><td>Umbrales, rutas, colores, intervalos</td></tr>
+    <tr><td><code>styles/dark_theme.qss</code></td><td>Tema visual completo</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="constantes">25. Constantes configurables</h2>
+
+<p>Todas centralizadas en <code>utils/constants.py</code> para ajustar comportamiento sin tocar la lógica:</p>
+
+<table>
+    <tr><th>Grupo</th><th>Constantes clave</th></tr>
+    <tr><td>Flujo óptico</td><td><code>FLOW_PROCESS_WIDTH/HEIGHT</code>, <code>FLOW_GRID_STEP</code>, <code>FLOW_MIN_MAGNITUDE</code>, <code>FLOW_MAGNITUDE_SCALE</code>, <code>FLOW_SMOOTH_ALPHA</code></td></tr>
+    <tr><td>Riesgo</td><td><code>RISK_MEDIUM_MIN</code>, <code>RISK_HIGH_MIN</code></td></tr>
+    <tr><td>Alertas</td><td><code>ALERT_MOTION_MIN</code>, <code>ALERT_ELEVATED_MIN</code>, <code>ALERT_INTENSE_MIN</code>, <code>ALERT_COOLDOWN_SEC</code></td></tr>
+    <tr><td>Dataset</td><td><code>DATASET_AUTO_INTERVAL</code>, <code>DATASET_PATH</code></td></tr>
+    <tr><td>Evidencia</td><td><code>EVIDENCE_SCREENSHOT_CONF</code>, <code>EVIDENCE_CLIP_CONF</code>, <code>CLIP_BEFORE_SEC</code>, <code>CLIP_AFTER_SEC</code></td></tr>
+    <tr><td>Rendimiento</td><td><code>UI_UPDATE_INTERVAL</code>, <code>EVIDENCE_FRAME_INTERVAL</code>, <code>VIDEO_BUFFER_SIZE</code>, <code>SUSPICIOUS_LOG_COOLDOWN_SEC</code></td></tr>
+    <tr><td>Rutas</td><td><code>DATASET_DIR</code>, <code>MODELS_DIR</code>, <code>EVIDENCE_DIR</code>, <code>EVIDENCE_CLIPS_DIR</code></td></tr>
+</table>
+
+<div class="note">
+    <p><strong>Documentos relacionados:</strong> <code>documentacion.html</code> (documentación general y sprints) · <code>README.md</code> (inicio rápido) · <code>requirements.txt</code> (dependencias).</p>
+</div>
+
+</body>
+</html>

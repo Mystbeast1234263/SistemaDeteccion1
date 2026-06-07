@@ -36,7 +36,10 @@ from utils.constants import (
     APP_NAME,
     APP_SHORT_NAME,
     DATASET_AUTO_INTERVAL,
+    EVIDENCE_FRAME_INTERVAL,
     MODELS_DIR,
+    SUSPICIOUS_LOG_COOLDOWN_SEC,
+    UI_UPDATE_INTERVAL,
     VIDEO_EXTENSIONS,
 )
 from video.optical_flow import OpticalFlowAnalyzer
@@ -53,8 +56,10 @@ class MainWindow(QMainWindow):
         self._monitoring_active = False
         self._source_mode = None
         self._last_alert_time = 0.0
+        self._last_suspicious_log_time = 0.0
         self._last_risk_level = "BAJO"
         self._last_features = None
+        self._last_frame = None
         self._frame_counter = 0
         self._analysis_start = 0.0
         self._webcam_elapsed = 0.0
@@ -219,9 +224,11 @@ class MainWindow(QMainWindow):
 
         ret, frame = self._read_first_frame(path)
         if ret and frame is not None:
+            self._last_frame = frame
             self.video_panel.show_frame(frame, f"VIDEO CARGADO — {filename}")
 
         self.control_bar.btn_start.setEnabled(True)
+        self._update_control_state()
         self.sidebar.log_activity(f"Video importado: {filename}", "OK")
         self.sidebar.set_risk_level("BAJO")
 
@@ -287,6 +294,7 @@ class MainWindow(QMainWindow):
         self._analysis_start = time.time()
         self._frame_counter = 0
         self._last_alert_time = 0.0
+        self._last_suspicious_log_time = 0.0
         self._last_risk_level = "BAJO"
         self.motion_analyzer.reset()
         self.segment_tracker.reset()
@@ -335,10 +343,14 @@ class MainWindow(QMainWindow):
         if frame is None or not getattr(frame, "size", 0):
             return
 
+        needs_control_update = self._last_frame is None
+        self._last_frame = frame
         display_frame = frame
-        self.evidence_manager.push_frame(frame)
 
         if self._monitoring_active:
+            if self._frame_counter % EVIDENCE_FRAME_INTERVAL == 0:
+                self.evidence_manager.push_frame(frame)
+
             result = self.motion_analyzer.process(frame, draw_overlay=True)
             display_frame = result.annotated_frame
             self._last_features = result
@@ -351,9 +363,11 @@ class MainWindow(QMainWindow):
             if self._frame_counter % DATASET_AUTO_INTERVAL == 0:
                 self.dataset_manager.append_auto(result)
 
-            self._update_motion_metrics(result)
-            self._update_ml_analysis(result, display_frame)
-            self.sidebar.update_statistics(self.session_stats.as_dict())
+            update_ui = self._frame_counter % UI_UPDATE_INTERVAL == 0
+            if update_ui:
+                self._update_motion_metrics(result)
+                self._update_ml_analysis(result, display_frame)
+                self.sidebar.update_statistics(self.session_stats.as_dict())
 
         if self._source_mode == "file":
             label = (
@@ -372,6 +386,9 @@ class MainWindow(QMainWindow):
 
         self.video_panel.show_frame(display_frame, label)
 
+        if needs_control_update:
+            self._update_control_state()
+
     def _update_ml_analysis(self, result, frame) -> None:
         prediction_label = ""
         confidence = 0.0
@@ -384,10 +401,13 @@ class MainWindow(QMainWindow):
                 self.sidebar.set_prediction(pred.label, pred.confidence)
 
                 if pred.is_suspicious:
-                    self.session_stats.add_suspicious()
-                    self.sidebar.log_activity(
-                        f"Comportamiento sospechoso — Confianza: {pred.confidence}%", "WARN"
-                    )
+                    now = time.time()
+                    if now - self._last_suspicious_log_time >= SUSPICIOUS_LOG_COOLDOWN_SEC:
+                        self.session_stats.add_suspicious()
+                        self.sidebar.log_activity(
+                            f"Comportamiento sospechoso — Confianza: {pred.confidence}%", "WARN"
+                        )
+                        self._last_suspicious_log_time = now
         else:
             self.sidebar.set_prediction("SIN MODELO", 0)
 
@@ -455,14 +475,25 @@ class MainWindow(QMainWindow):
             if self.sidebar.alerts_list.count() > ALERT_MAX_ITEMS:
                 self.sidebar.alerts_list.takeItem(self.sidebar.alerts_list.count() - 1)
 
+    def _features_for_labeling(self):
+        """Obtiene características del frame actual (monitoreo o video pausado)."""
+        if self._last_features is not None:
+            return self._last_features
+        if self._last_frame is not None and self._source_mode is not None:
+            return self.motion_analyzer.process(self._last_frame, draw_overlay=False)
+        return None
+
     def _on_manual_label(self, etiqueta: str) -> None:
-        if self._last_features is None:
+        features = self._features_for_labeling()
+        if features is None:
             QMessageBox.warning(
                 self, "Sin datos",
-                "Inicie el monitoreo y espere frames analizados antes de etiquetar.",
+                "Cargue un video o active la webcam y seleccione un frame antes de etiquetar.",
             )
             return
-        self.dataset_manager.append_manual(self._last_features, etiqueta)
+        self.dataset_manager.append_manual(features, etiqueta)
+        self.sidebar.set_movement_intensity(features.intensidad_movimiento)
+        self.sidebar.set_risk_level(features.nivel_riesgo)
         self.sidebar.log_activity(f"Muestra guardada como '{etiqueta}' en dataset.csv", "OK")
         counts = self.dataset_manager.count_samples()
         self.sidebar.log_activity(
@@ -471,6 +502,9 @@ class MainWindow(QMainWindow):
         )
 
     def _on_train_model(self) -> None:
+        was_playing = self.video_player.is_playing
+        self.video_player.pause()
+
         ok, msg = self.model_trainer.train(self.dataset_manager)
         if ok:
             QMessageBox.information(self, "Entrenamiento", msg)
@@ -480,11 +514,19 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Entrenamiento", msg)
             self.sidebar.log_activity(msg, "ERROR")
 
+        if was_playing and self._monitoring_active:
+            self.video_player.play()
+
     def _on_save_model(self) -> None:
+        was_playing = self.video_player.is_playing
+        self.video_player.pause()
+
         name, ok = QInputDialog.getText(
             self, "Guardar modelo", "Nombre del archivo:", text="modelo_v1.pkl",
         )
         if not ok or not name.strip():
+            if was_playing and self._monitoring_active:
+                self.video_player.play()
             return
         if not name.endswith(".pkl"):
             name += ".pkl"
@@ -495,11 +537,19 @@ class MainWindow(QMainWindow):
         else:
             QMessageBox.warning(self, "Modelo", msg)
 
+        if was_playing and self._monitoring_active:
+            self.video_player.play()
+
     def _on_load_model(self) -> None:
+        was_playing = self.video_player.is_playing
+        self.video_player.pause()
+
         path, _ = QFileDialog.getOpenFileName(
             self, "Cargar modelo", str(MODELS_DIR), "Modelos (*.pkl)",
         )
         if not path:
+            if was_playing and self._monitoring_active:
+                self.video_player.play()
             return
         success, msg = self.model_trainer.load(path)
         if success:
@@ -508,6 +558,9 @@ class MainWindow(QMainWindow):
             self.sidebar.set_prediction("MODELO CARGADO", 100)
         else:
             QMessageBox.warning(self, "Modelo", msg)
+
+        if was_playing and self._monitoring_active:
+            self.video_player.play()
 
     def _on_import_model(self) -> None:
         path, _ = QFileDialog.getOpenFileName(
@@ -573,6 +626,7 @@ class MainWindow(QMainWindow):
         self._video_path = ""
         self._source_mode = None
         self._monitoring_active = False
+        self._last_frame = None
         self.motion_analyzer.reset()
         self.segment_tracker.reset()
         self.timeline_bar.reset()
@@ -586,9 +640,8 @@ class MainWindow(QMainWindow):
         self.control_bar.btn_start.setEnabled(has_source and not self._monitoring_active)
         self.control_bar.btn_stop.setEnabled(self._monitoring_active)
         self.control_bar.btn_import.setEnabled(not self.webcam.is_active)
-        ml_enabled = self._last_features is not None or self._monitoring_active
-        self.control_bar.btn_label_normal.setEnabled(ml_enabled)
-        self.control_bar.btn_label_suspicious.setEnabled(ml_enabled)
+        can_label = has_source and self._last_frame is not None
+        self.control_bar.set_labeling_available(can_label)
 
     def closeEvent(self, event) -> None:
         self.video_player.stop()

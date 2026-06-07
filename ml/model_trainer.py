@@ -2,6 +2,7 @@
 
 import pickle
 import shutil
+from collections import Counter
 from pathlib import Path
 
 import numpy as np
@@ -49,91 +50,119 @@ class ModelTrainer:
         ]
 
     def train(self, dataset: DatasetManager | None = None) -> tuple[bool, str]:
-        dm = dataset or DatasetManager()
-        rows = dm.load_labeled_rows()
+        try:
+            dm = dataset or DatasetManager()
+            rows = dm.load_labeled_rows()
 
-        if len(rows) < 4:
-            return False, "Se necesitan al menos 4 muestras etiquetadas en dataset.csv."
+            if len(rows) < 4:
+                return False, "Se necesitan al menos 4 muestras etiquetadas en dataset.csv."
 
-        labels = [r["etiqueta"] for r in rows]
-        if len(set(labels)) < 2:
-            return False, "El dataset debe incluir ejemplos 'normal' y 'sospechoso'."
+            label_counts = Counter(r["etiqueta"] for r in rows)
+            if len(label_counts) < 2:
+                return False, "El dataset debe incluir ejemplos 'normal' y 'sospechoso'."
 
-        X = np.array([self._features_from_row(r) for r in rows])
-        y = self.label_encoder.transform(labels)
+            min_class = min(label_counts.values())
+            if min_class < 2:
+                return (
+                    False,
+                    f"Cada clase necesita al menos 2 muestras. "
+                    f"Actual: normal={label_counts.get(LABEL_NORMAL, 0)}, "
+                    f"sospechoso={label_counts.get(LABEL_SOSPECHOSO, 0)}.",
+                )
 
-        test_size = 0.2 if len(rows) >= 10 else 0.0
-        if test_size > 0:
-            X_train, X_test, y_train, y_test = train_test_split(
-                X, y, test_size=test_size, random_state=42, stratify=y
+            labels = [r["etiqueta"] for r in rows]
+            X = np.array([self._features_from_row(r) for r in rows])
+            y = self.label_encoder.transform(labels)
+
+            can_stratify = len(rows) >= 10 and min_class >= 2
+            if can_stratify:
+                X_train, X_test, y_train, y_test = train_test_split(
+                    X, y, test_size=0.2, random_state=42, stratify=y
+                )
+            else:
+                X_train, y_train = X, y
+                X_test, y_test = X, y
+
+            self.model = RandomForestClassifier(
+                n_estimators=50,
+                max_depth=8,
+                random_state=42,
+                n_jobs=-1,
             )
-        else:
-            X_train, y_train = X, y
-            X_test, y_test = X, y
-
-        self.model = RandomForestClassifier(
-            n_estimators=100,
-            max_depth=10,
-            random_state=42,
-            n_jobs=-1,
-        )
-        self.model.fit(X_train, y_train)
-        accuracy = float(self.model.score(X_test, y_test))
-        self._metrics = {
-            "accuracy": round(accuracy * 100, 2),
-            "samples": len(rows),
-            "features": ["intensidad", "magnitud", "direccion", "cantidad", "riesgo_enc"],
-        }
-        return True, f"Modelo entrenado. Precision: {self._metrics['accuracy']}% ({len(rows)} muestras)"
+            self.model.fit(X_train, y_train)
+            accuracy = float(self.model.score(X_test, y_test))
+            self._metrics = {
+                "accuracy": round(accuracy * 100, 2),
+                "samples": len(rows),
+                "features": ["intensidad", "magnitud", "direccion", "cantidad", "riesgo_enc"],
+            }
+            return True, (
+                f"Modelo entrenado. Precision: {self._metrics['accuracy']}% "
+                f"({len(rows)} muestras)"
+            )
+        except Exception as exc:
+            return False, f"Error al entrenar: {exc}"
 
     def save(self, filename: str = "modelo_v1.pkl") -> tuple[bool, str]:
         if self.model is None:
-            return False, "No hay modelo entrenado para guardar."
+            return False, "No hay modelo entrenado. Pulse 'Entrenar Modelo' primero."
 
-        path = self.models_dir / filename
-        payload = {
-            "model": self.model,
-            "label_encoder": self.label_encoder,
-            "metrics": self._metrics,
-        }
-        with open(path, "wb") as f:
-            pickle.dump(payload, f)
-        self._model_path = path
-        return True, f"Modelo guardado: {path}"
+        try:
+            path = self.models_dir / filename
+            payload = {
+                "model": self.model,
+                "label_encoder": self.label_encoder,
+                "metrics": self._metrics,
+            }
+            with open(path, "wb") as f:
+                pickle.dump(payload, f)
+            self._model_path = path
+            return True, f"Modelo guardado: {path.name}"
+        except Exception as exc:
+            return False, f"Error al guardar: {exc}"
 
     def load(self, path: str | Path) -> tuple[bool, str]:
         path = Path(path)
         if not path.exists():
             return False, f"No se encontró el modelo: {path}"
 
-        with open(path, "rb") as f:
-            payload = pickle.load(f)
+        try:
+            with open(path, "rb") as f:
+                payload = pickle.load(f)
 
-        self.model = payload["model"]
-        self.label_encoder = payload.get("label_encoder", self.label_encoder)
-        self._metrics = payload.get("metrics", {})
-        self._model_path = path
-        return True, f"Modelo cargado: {path.name}"
+            self.model = payload["model"]
+            self.label_encoder = payload.get("label_encoder", self.label_encoder)
+            self._metrics = payload.get("metrics", {})
+            self._model_path = path
+            return True, f"Modelo cargado: {path.name}"
+        except Exception as exc:
+            return False, f"Error al cargar: {exc}"
 
     def export_model(self, dest_path: str) -> tuple[bool, str]:
-        if self._model_path is None or not self._model_path.exists():
-            if self.model is None:
-                return False, "No hay modelo para exportar."
-            ok, msg = self.save("modelo_export_temp.pkl")
-            if not ok:
-                return False, msg
+        try:
+            if self._model_path is None or not self._model_path.exists():
+                if self.model is None:
+                    return False, "No hay modelo para exportar."
+                ok, msg = self.save("modelo_export_temp.pkl")
+                if not ok:
+                    return False, msg
 
-        dest = Path(dest_path)
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(self._model_path, dest)
-        return True, f"Modelo exportado a: {dest}"
+            dest = Path(dest_path)
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(self._model_path, dest)
+            return True, f"Modelo exportado a: {dest.name}"
+        except Exception as exc:
+            return False, f"Error al exportar: {exc}"
 
     def import_model(self, src_path: str, filename: str | None = None) -> tuple[bool, str]:
         src = Path(src_path)
         if not src.exists():
             return False, "Archivo de modelo no encontrado."
 
-        dest_name = filename or src.name
-        dest = self.models_dir / dest_name
-        shutil.copy2(src, dest)
-        return self.load(dest)
+        try:
+            dest_name = filename or src.name
+            dest = self.models_dir / dest_name
+            shutil.copy2(src, dest)
+            return self.load(dest)
+        except Exception as exc:
+            return False, f"Error al importar: {exc}"

@@ -58,19 +58,20 @@ class SidebarPanel(QWidget):
         outer.setContentsMargins(0, 0, 0, 0)
 
         scroll = QScrollArea()
+        scroll.setObjectName("sidebarScroll")
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.NoFrame)
-        scroll.setStyleSheet("QScrollArea { background: transparent; border: none; }")
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        scroll.viewport().setObjectName("sidebarViewport")
 
         content = QWidget()
+        content.setObjectName("sidebarContent")
         layout = QVBoxLayout(content)
         layout.setContentsMargins(16, 16, 16, 16)
         layout.setSpacing(12)
 
         header = QLabel("PANEL DE ANÁLISIS")
-        header.setStyleSheet(
-            f"color: {COLORS['neon_blue']}; font-size: 12px; font-weight: bold; letter-spacing: 2px;"
-        )
+        header.setObjectName("sidebarHeader")
         layout.addWidget(header)
 
         self.risk_card = MetricCard("NIVEL DE RIESGO", "BAJO", "riskLow")
@@ -88,8 +89,8 @@ class SidebarPanel(QWidget):
         self.movement_bar.setObjectName("movementBar")
         self.movement_bar.setRange(0, 100)
         self.movement_value = QLabel("0%")
+        self.movement_value.setObjectName("metricValueRed")
         self.movement_value.setAlignment(Qt.AlignCenter)
-        self.movement_value.setStyleSheet(f"color: {COLORS['neon_red']}; font-size: 16px;")
 
         movement_layout.addWidget(movement_title)
         movement_layout.addWidget(self.movement_bar)
@@ -106,10 +107,11 @@ class SidebarPanel(QWidget):
         conf_title = QLabel("CONFIANZA")
         conf_title.setObjectName("cardTitle")
         self.confidence_bar = QProgressBar()
+        self.confidence_bar.setObjectName("confidenceBar")
         self.confidence_bar.setRange(0, 100)
         self.confidence_value = QLabel("0%")
+        self.confidence_value.setObjectName("metricValueBlue")
         self.confidence_value.setAlignment(Qt.AlignCenter)
-        self.confidence_value.setStyleSheet(f"color: {COLORS['neon_blue']}; font-size: 16px;")
         conf_layout.addWidget(conf_title)
         conf_layout.addWidget(self.confidence_bar)
         conf_layout.addWidget(self.confidence_value)
@@ -128,16 +130,17 @@ class SidebarPanel(QWidget):
             ("captures", "Capturas"),
             ("clips", "Clips"),
         ]:
-            row = QHBoxLayout()
+            frame = QFrame()
+            frame.setObjectName("statRow")
+            row = QHBoxLayout(frame)
+            row.setContentsMargins(10, 6, 10, 6)
             name_lbl = QLabel(label)
-            name_lbl.setStyleSheet(f"color: {COLORS['text_secondary']}; font-size: 10px;")
+            name_lbl.setObjectName("statLabel")
             val_lbl = QLabel("0")
-            val_lbl.setStyleSheet(f"color: {COLORS['text_primary']}; font-size: 10px;")
+            val_lbl.setObjectName("statValue")
             val_lbl.setAlignment(Qt.AlignRight)
             row.addWidget(name_lbl)
             row.addWidget(val_lbl)
-            frame = QFrame()
-            frame.setLayout(row)
             layout.addWidget(frame)
             self.stats_labels[key] = val_lbl
 
@@ -185,12 +188,16 @@ class SidebarPanel(QWidget):
 
     def set_prediction(self, label: str, confidence: float = 0.0) -> None:
         self.prediction_card.set_value(label)
+        obj = "cardValue"
         if label == "SOSPECHOSO":
-            self.prediction_card.value_label.setStyleSheet(f"color: {COLORS['danger']}; font-size: 18px; font-weight: bold;")
+            obj = "predictionSuspicious"
         elif label == "NORMAL":
-            self.prediction_card.value_label.setStyleSheet(f"color: {COLORS['success']}; font-size: 18px; font-weight: bold;")
-        else:
-            self.prediction_card.value_label.setStyleSheet(f"color: {COLORS['text_muted']}; font-size: 14px;")
+            obj = "predictionNormal"
+        elif label in ("SIN MODELO", "ANALIZANDO..."):
+            obj = "predictionMuted"
+        self.prediction_card.value_label.setObjectName(obj)
+        self.prediction_card.value_label.style().unpolish(self.prediction_card.value_label)
+        self.prediction_card.value_label.style().polish(self.prediction_card.value_label)
 
         conf = int(confidence)
         self.confidence_bar.setValue(conf)

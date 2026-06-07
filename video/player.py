@@ -3,7 +3,7 @@
 import cv2
 from PyQt5.QtCore import QObject, QTimer, pyqtSignal
 
-from utils.constants import DEFAULT_FPS
+from utils.constants import DEFAULT_FPS, VIDEO_BUFFER_SIZE
 
 
 class VideoPlayer(QObject):
@@ -59,6 +59,7 @@ class VideoPlayer(QObject):
 
         fps = capture.get(cv2.CAP_PROP_FPS)
         self._fps = fps if fps and fps > 0 else DEFAULT_FPS
+        capture.set(cv2.CAP_PROP_BUFFERSIZE, VIDEO_BUFFER_SIZE)
         self._total_frames = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
         self._duration = self._total_frames / self._fps if self._fps else 0.0
         self._current_frame = 0

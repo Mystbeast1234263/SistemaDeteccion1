@@ -119,7 +119,7 @@
         <strong>Proyecto:</strong> SIDACS (SistemaDeteccion)<br>
         <strong>Versión actual:</strong> 3.0.0-sprint3<br>
         <strong>Ubicación del proyecto:</strong> F:\emergentes\emergentes\SistemaDeteccion<br>
-        <strong>Última actualización de este documento:</strong> 26 de mayo de 2026<br>
+        <strong>Última actualización de este documento:</strong> 8 de junio de 2026<br>
         <strong>Archivo:</strong> documentacion.html
     </p>
 
@@ -138,6 +138,19 @@
         <li><a href="#sprint1">Sprint 1 — Interfaz y reproducción</a></li>
         <li><a href="#sprint2">Sprint 2 — Flujo Óptico Farneback</a></li>
         <li><a href="#sprint3">Sprint 3 — Machine Learning y evidencia</a></li>
+        <li><a href="#sprint3-objetivo">9.1 Objetivo del Sprint 3</a></li>
+        <li><a href="#sprint3-arquitectura">9.2 Arquitectura ML</a></li>
+        <li><a href="#sprint3-dataset">9.3 Dataset inteligente</a></li>
+        <li><a href="#sprint3-etiquetado">9.4 Etiquetado manual</a></li>
+        <li><a href="#sprint3-entrenamiento">9.5 Entrenamiento del modelo</a></li>
+        <li><a href="#sprint3-modelos">9.6 Importar y exportar modelos</a></li>
+        <li><a href="#sprint3-prediccion">9.7 Predicción en tiempo real</a></li>
+        <li><a href="#sprint3-timeline">9.8 Barra de tiempo y segmentos</a></li>
+        <li><a href="#sprint3-evidencia">9.9 Captura y clips de evidencia</a></li>
+        <li><a href="#sprint3-estadisticas">9.10 Panel de estadísticas</a></li>
+        <li><a href="#sprint3-manual">9.11 Manual de uso Sprint 3</a></li>
+        <li><a href="#sprint3-constantes">9.12 Constantes Sprint 3</a></li>
+        <li><a href="#sprint3-modulos">9.13 Módulos nuevos (ml/ y ui/)</a></li>
         <li><a href="#interfaz">Interfaz y diseño visual</a></li>
         <li><a href="#pendiente">Funcionalidades pendientes</a></li>
         <li><a href="#changelog">Registro de cambios</a></li>
@@ -153,11 +166,11 @@
     </p>
     <p>
         El Sprint 1 entrega la interfaz visual completa, reproducción de archivos de video y transmisión en
-        vivo desde webcam.         El Sprint 2 agrega detección de movimiento mediante Flujo Óptico Farneback,
+        vivo desde webcam. El Sprint 2 agrega detección de movimiento mediante Flujo Óptico Farneback,
         intensidad de movimiento, nivel de riesgo dinámico, alertas automáticas y registro de actividades.
-        El Sprint 3 incorpora Machine Learning clásico con scikit-learn (RandomForestClassifier),
-        dataset inteligente, entrenamiento y predicción en tiempo real, barra de tiempo con segmentos
-        sospechosos, captura automática de evidencia y panel de estadísticas.
+        El Sprint 3 transforma SIDACS de un detector de movimiento a un sistema capaz de aprender
+        comportamientos sospechosos mediante Machine Learning clásico (scikit-learn), utilizando las
+        características MotionFeatures del Sprint 2 como entrada principal del modelo RandomForestClassifier.
     </p>
 
     <h2 id="tecnologias">2. Tecnologías</h2>
@@ -212,14 +225,16 @@ F:\emergentes\emergentes\SistemaDeteccion/
 │   ├── __init__.py
 │   ├── main_window.py      → Ventana principal y lógica de UI
 │   ├── video_panel.py      → Área de visualización de video
-│   ├── sidebar_panel.py    → Panel lateral (métricas y registros)
-│   └── control_bar.py      → Barra de botones de control
+│   ├── sidebar_panel.py    → Panel lateral (métricas, ML, registros)
+│   ├── control_bar.py      → Barra de botones (video + ML)
+│   └── timeline_bar.py     → Barra de tiempo inteligente (Sprint 3)
 │
 ├── video/
 │   ├── __init__.py
 │   ├── player.py           → Reproductor de archivos de video
 │   ├── webcam.py           → Captura desde cámara
 │   ├── frame_utils.py      → Conversión OpenCV → Qt
+│   ├── frame_buffer.py     → Buffer circular de frames (Sprint 3)
 │   └── optical_flow.py     → Flujo Óptico Farneback (Sprint 2)
 │
 ├── ml/                     → Machine Learning (Sprint 3)
@@ -254,16 +269,16 @@ F:\emergentes\emergentes\SistemaDeteccion/
     <h3>4.1 main.py</h3>
     <p>
         Punto de entrada de la aplicación. Configura la ruta raíz del proyecto en <code>sys.path</code>,
-        verifica dependencias (PyQt5, OpenCV, NumPy), carga el tema QSS y muestra la ventana principal.
+        verifica dependencias (PyQt5, OpenCV, NumPy, scikit-learn), carga el tema QSS y muestra la ventana principal.
         Incluye manejo de errores fatales con mensaje en consola o cuadro de diálogo.
     </p>
 
     <h3>4.2 ui/main_window.py</h3>
     <p>
-        Ventana principal del dashboard. Orquesta el panel de video, barra de controles, panel lateral y
-        barra superior. Gestiona importación de video, webcam, inicio y detención de monitoreo, y desde
-        Sprint 2 integra el analizador de flujo óptico para actualizar métricas, alertas y registro de
-        actividades en tiempo real.
+        Ventana principal del dashboard. Orquesta el panel de video, barra de tiempo, barra de controles,
+        panel lateral y barra superior. Gestiona importación de video, webcam, monitoreo, flujo óptico
+        (Sprint 2) y el ciclo completo de Machine Learning: dataset, entrenamiento, predicción, evidencia
+        y estadísticas (Sprint 3).
     </p>
 
     <h3>4.3 ui/video_panel.py</h3>
@@ -275,20 +290,23 @@ F:\emergentes\emergentes\SistemaDeteccion/
 
     <h3>4.4 ui/sidebar_panel.py</h3>
     <p>
-        Panel lateral con nivel de riesgo, intensidad de movimiento, lista de alertas detectadas y
-        registro de actividades con colores según nivel (INFO, WARN, ERROR, OK).
+        Panel lateral con scroll. Muestra nivel de riesgo, intensidad de movimiento, predicción ML
+        (NORMAL/SOSPECHOSO), barra de confianza (0–100 %), estadísticas de sesión, alertas detectadas
+        y registro de actividades con colores según nivel (INFO, WARN, ERROR, OK).
     </p>
 
     <h3>4.5 ui/control_bar.py</h3>
     <p>
-        Botones: Importar Video, Activar Webcam, Iniciar Monitoreo, Detener Análisis e Historial.
-        Sin iconos ni emojis en las etiquetas.
+        Dos filas de botones. Fila 1 (Sprint 1): Importar Video, Activar Webcam, Iniciar Monitoreo,
+        Detener Análisis, Historial. Fila 2 (Sprint 3): Guardar como Normal, Guardar como Sospechoso,
+        Entrenar Modelo, Guardar Modelo, Cargar Modelo, Importar Modelo, Exportar Modelo.
     </p>
 
     <h3>4.6 video/player.py</h3>
     <p>
-        Clase <code>VideoPlayer</code>: lectura y reproducción de archivos con <code>cv2.VideoCapture</code>
-        y <code>QTimer</code> al FPS del video o 30 por defecto.
+        Clase <code>VideoPlayer</code>: lectura y reproducción con <code>cv2.VideoCapture</code> y
+        <code>QTimer</code>. Sprint 3 añade duración total, posición actual, señal
+        <code>position_changed</code> y método <code>seek_seconds()</code> para la barra de tiempo.
     </p>
 
     <h3>4.7 video/webcam.py</h3>
@@ -318,8 +336,8 @@ F:\emergentes\emergentes\SistemaDeteccion/
 
     <h3>4.11 utils/constants.py</h3>
     <p>
-        Nombre de la aplicación, versión, paleta de colores, extensiones de video, FPS, índice de webcam
-        y constantes de flujo óptico, riesgo y alertas (Sprint 2).
+        Nombre de la aplicación, versión, paleta de colores, rutas de dataset/models/evidence,
+        constantes de flujo óptico (Sprint 2) y umbrales de ML, evidencia y alertas (Sprint 3).
     </p>
 
     <h2 id="instalacion">5. Instalación</h2>
@@ -336,6 +354,7 @@ pip install -r requirements.txt</pre>
         <li>PyQt5 &gt;= 5.15.0</li>
         <li>opencv-python &gt;= 4.8.0</li>
         <li>numpy &gt;= 1.24.0</li>
+        <li>scikit-learn &gt;= 1.3.0</li>
     </ul>
 
     <h2 id="ejecucion">6. Ejecución</h2>
@@ -450,43 +469,366 @@ python main.py</pre>
         </tbody>
     </table>
 
-    <h2 id="sprint3">9. Sprint 3 — Machine Learning y evidencia</h2>
+    <h2 id="sprint3">9. Sprint 3 — Análisis inteligente de comportamientos sospechosos</h2>
 
-    <h3>9.1 Dataset inteligente (dataset/dataset.csv)</h3>
-    <p>Registro automático cada 30 frames durante el monitoreo y etiquetado manual con botones. Columnas: timestamp, intensidad_movimiento, magnitud_promedio, direccion_promedio, cantidad_movimiento, nivel_riesgo, etiqueta (normal/sospechoso).</p>
+    <div class="note">
+        <p>
+            El Sprint 3 no modifica la arquitectura de carpetas existente (ui, video, styles, utils).
+            Se añade el paquete <code>ml/</code> y carpetas de datos (dataset, models, evidence).
+            Sprint 1 y Sprint 2 permanecen intactos y funcionales.
+        </p>
+    </div>
 
-    <h3>9.2 Etiquetado manual</h3>
-    <p>Botones <strong>Guardar como Normal</strong> y <strong>Guardar como Sospechoso</strong> registran el frame actual analizado en el dataset.</p>
+    <h3 id="sprint3-objetivo">9.1 Objetivo del Sprint 3</h3>
+    <p>
+        Transformar SIDACS de un detector de movimiento a un sistema capaz de <strong>aprender
+        comportamientos sospechosos</strong> mediante Machine Learning clásico. Las variables
+        <code>MotionFeatures</code> generadas por el Flujo Óptico Farneback (Sprint 2) son la
+        entrada principal del clasificador. No se utiliza Deep Learning, YOLO, TensorFlow ni PyTorch.
+    </p>
+    <p>Entregables del Sprint 3:</p>
+    <ul>
+        <li>Generación automática y manual de dataset en CSV.</li>
+        <li>Entrenamiento con RandomForestClassifier (scikit-learn).</li>
+        <li>Guardado, carga, importación y exportación de modelos .pkl.</li>
+        <li>Predicción NORMAL / SOSPECHOSO con confianza en tiempo real.</li>
+        <li>Barra de tiempo tipo YouTube con segmentos sospechosos y navegación por eventos.</li>
+        <li>Capturas PNG y clips MP4 automáticos como evidencia.</li>
+        <li>Panel de estadísticas de sesión.</li>
+    </ul>
 
-    <h3>9.3 Entrenamiento del modelo</h3>
-    <p>RandomForestClassifier de scikit-learn. Botones: Entrenar Modelo, Guardar Modelo, Cargar Modelo. Modelos en <code>models/*.pkl</code>.</p>
+    <h3 id="sprint3-arquitectura">9.2 Arquitectura ML — Flujo de datos</h3>
+    <pre>
+Frame (video / webcam)
+    │
+    ▼
+OpticalFlowAnalyzer (Sprint 2)  →  MotionFeatures
+    │                                    │
+    │                                    ├── DatasetManager  →  dataset/dataset.csv
+    │                                    ├── BehaviorPredictor  →  Panel: Predicción + Confianza
+    │                                    ├── SegmentTracker  →  TimelineBar (marcas)
+    │                                    ├── EvidenceManager  →  evidence/*.png, evidence/clips/*.mp4
+    │                                    └── SessionStatistics  →  Panel: Estadísticas
+    │
+    ▼
+RandomForestClassifier (entrenado con dataset.csv)
+    │
+    ▼
+models/modelo_v1.pkl  ←→  Importar / Exportar entre computadoras
+    </pre>
+    <p>
+        El entrenamiento es offline (botón Entrenar Modelo). La predicción ocurre en cada frame
+        durante el monitoreo activo, siempre que exista un modelo cargado en memoria.
+    </p>
 
-    <h3>9.4 Importar y exportar modelos</h3>
-    <p>Permite transferir modelos entre computadoras sin reentrenar. Importar copia el .pkl a models/; Exportar guarda una copia en ubicación elegida.</p>
+    <h3 id="sprint3-dataset">9.3 Módulo 1 — Dataset inteligente</h3>
+    <p>
+        Archivo: <code>ml/dataset_manager.py</code>. Destino: <code>dataset/dataset.csv</code>.
+    </p>
+    <p><strong>Columnas del dataset:</strong></p>
+    <table>
+        <thead>
+            <tr><th>Columna</th><th>Tipo</th><th>Origen</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>timestamp</td><td>datetime</td><td>Fecha y hora del registro</td></tr>
+            <tr><td>intensidad_movimiento</td><td>int (0–100)</td><td>MotionFeatures</td></tr>
+            <tr><td>magnitud_promedio</td><td>float</td><td>MotionFeatures</td></tr>
+            <tr><td>direccion_promedio</td><td>float (grados)</td><td>MotionFeatures</td></tr>
+            <tr><td>cantidad_movimiento</td><td>float (%)</td><td>MotionFeatures</td></tr>
+            <tr><td>nivel_riesgo</td><td>string</td><td>BAJO, MEDIO o ALTO</td></tr>
+            <tr><td>etiqueta</td><td>string</td><td>normal o sospechoso</td></tr>
+        </tbody>
+    </table>
+    <p><strong>Registro automático:</strong> durante el monitoreo activo, cada 30 frames
+    (<code>DATASET_AUTO_INTERVAL</code>) se añade una fila con etiqueta heurística:</p>
+    <ul>
+        <li><code>sospechoso</code> — si nivel_riesgo es ALTO o intensidad ≥ 56 %.</li>
+        <li><code>normal</code> — en cualquier otro caso.</li>
+    </ul>
+    <p>
+        El CSV se crea automáticamente con encabezados la primera vez que se ejecuta la aplicación.
+        Las filas se agregan en modo append sin sobrescribir datos anteriores.
+    </p>
 
-    <h3>9.5 Predicción en tiempo real</h3>
-    <p>Panel lateral muestra Predicción (NORMAL/SOSPECHOSO) y Confianza (0-100%). Usa MotionFeatures como entrada del modelo.</p>
+    <h3 id="sprint3-etiquetado">9.4 Módulo 2 — Etiquetado manual</h3>
+    <p>
+        Botones en la segunda fila de la barra de controles. Permiten al operador entrenar el modelo
+        con ejemplos reales observados en video o webcam.
+    </p>
+    <table>
+        <thead>
+            <tr><th>Botón</th><th>Acción</th><th>Etiqueta guardada</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Guardar como Normal</td><td>Registra el último MotionFeatures analizado</td><td>normal</td></tr>
+            <tr><td>Guardar como Sospechoso</td><td>Registra el último MotionFeatures analizado</td><td>sospechoso</td></tr>
+        </tbody>
+    </table>
+    <p>
+        Requisito: el monitoreo debe estar activo y al menos un frame debe haber sido procesado.
+        Tras guardar, el registro de actividades muestra el conteo total de muestras en el dataset.
+    </p>
 
-    <h3>9.6 Barra de tiempo inteligente</h3>
-    <p>Barra tipo YouTube bajo el video: duración total, tiempo actual, adelantar/retroceder, clic para ir a cualquier minuto. Compatible con videos importados.</p>
+    <h3 id="sprint3-entrenamiento">9.5 Módulo 3 — Entrenamiento del modelo</h3>
+    <p>
+        Archivo: <code>ml/model_trainer.py</code>. Modelo: <code>sklearn.ensemble.RandomForestClassifier</code>.
+    </p>
+    <p><strong>Features de entrada al modelo (5 variables):</strong></p>
+    <ol>
+        <li>intensidad_movimiento</li>
+        <li>magnitud_promedio</li>
+        <li>direccion_promedio</li>
+        <li>cantidad_movimiento</li>
+        <li>nivel_riesgo codificado (BAJO=0, MEDIO=1, ALTO=2)</li>
+    </ol>
+    <p><strong>Parámetros del RandomForest:</strong></p>
+    <table>
+        <thead>
+            <tr><th>Parámetro</th><th>Valor</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>n_estimators</td><td>100</td></tr>
+            <tr><td>max_depth</td><td>10</td></tr>
+            <tr><td>random_state</td><td>42</td></tr>
+        </tbody>
+    </table>
+    <p><strong>Requisitos para entrenar:</strong></p>
+    <ul>
+        <li>Mínimo 4 muestras etiquetadas en dataset.csv.</li>
+        <li>Al menos una muestra <code>normal</code> y una <code>sospechoso</code>.</li>
+    </ul>
+    <p><strong>Botones:</strong></p>
+    <table>
+        <thead>
+            <tr><th>Botón</th><th>Función</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Entrenar Modelo</td><td>Lee dataset.csv, entrena RandomForest, muestra precisión</td></tr>
+            <tr><td>Guardar Modelo</td><td>Guarda en models/ con nombre elegido (ej. modelo_v1.pkl)</td></tr>
+            <tr><td>Cargar Modelo</td><td>Abre diálogo para seleccionar .pkl desde models/</td></tr>
+        </tbody>
+    </table>
 
-    <h3>9.7 Mapa de segmentos sospechosos</h3>
-    <p>Marcas visuales en la barra: amarillo (riesgo medio), rojo (riesgo alto), rojo intenso (sospechoso con alta confianza).</p>
+    <h3 id="sprint3-modelos">9.6 Módulo 4 — Importar y exportar modelos</h3>
+    <p>
+        Permite entregar un modelo entrenado a otra computadora sin volver a entrenar.
+        Formato: pickle (.pkl) con model, label_encoder y métricas de entrenamiento.
+    </p>
+    <table>
+        <thead>
+            <tr><th>Botón</th><th>Función</th><th>Ejemplo</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Importar Modelo</td><td>Copia .pkl externo a models/ y lo carga</td><td>Recibir modelo_examen_final.pkl</td></tr>
+            <tr><td>Exportar Modelo</td><td>Copia el modelo activo a ubicación elegida</td><td>USB, red, correo</td></tr>
+        </tbody>
+    </table>
+    <p><strong>Flujo en otra computadora:</strong></p>
+    <ol>
+        <li>Instalar SIDACS y dependencias (<code>pip install -r requirements.txt</code>).</li>
+        <li>Ejecutar <code>python main.py</code>.</li>
+        <li>Pulsar Importar Modelo y seleccionar el archivo .pkl.</li>
+        <li>Importar video o activar webcam → Iniciar Monitoreo.</li>
+        <li>El sistema predice NORMAL/SOSPECHOSO sin reentrenar.</li>
+    </ol>
 
-    <h3>9.8 Navegación por eventos</h3>
-    <p>Clic en una marca salta automáticamente al momento sospechoso del video.</p>
+    <h3 id="sprint3-prediccion">9.7 Módulo 5 — Predicción en tiempo real</h3>
+    <p>
+        Archivo: <code>ml/predictor.py</code>. Clase: <code>BehaviorPredictor</code>.
+        Solo funciona si hay un modelo cargado (<code>ModelTrainer.is_loaded == True</code>).
+    </p>
+    <p>En cada frame durante monitoreo activo:</p>
+    <ol>
+        <li>MotionFeatures se convierte en vector de 5 features.</li>
+        <li>RandomForest devuelve clase y probabilidades (<code>predict_proba</code>).</li>
+        <li>Panel lateral muestra Predicción y Confianza.</li>
+    </ol>
+    <table>
+        <thead>
+            <tr><th>Predicción</th><th>Color en UI</th><th>Significado</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>NORMAL</td><td>Verde (#00ff88)</td><td>Comportamiento dentro de lo esperado</td></tr>
+            <tr><td>SOSPECHOSO</td><td>Rojo (#ff3366)</td><td>Comportamiento clasificado como anómalo</td></tr>
+            <tr><td>SIN MODELO</td><td>Gris</td><td>No hay modelo cargado; solo análisis de movimiento</td></tr>
+        </tbody>
+    </table>
+    <p>Ejemplo en pantalla:</p>
+    <pre>Predicción: SOSPECHOSO
+Confianza: 92%</pre>
+    <p>
+        Si la predicción es SOSPECHOSO, se incrementa el contador de sospechosos en estadísticas
+        y se registra en el log de actividades.
+    </p>
 
-    <h3>9.9 Captura automática de evidencia</h3>
-    <p>Si confianza ≥ 85%, guarda captura PNG en <code>evidence/</code> con formato <code>YYYY-MM-DD_HH-MM-SS.png</code>.</p>
+    <h3 id="sprint3-timeline">9.8 Módulos 6, 7 y 8 — Barra de tiempo, segmentos y navegación</h3>
+    <p>
+        Archivo: <code>ui/timeline_bar.py</code>. Clases: <code>TimelineBar</code>, <code>TimelineSlider</code>.
+        Ubicación en UI: debajo del panel de video, encima de la barra de controles.
+    </p>
+    <p><strong>Funciones de la barra de tiempo:</strong></p>
+    <ul>
+        <li>Mostrar duración total del video (formato MM:SS o HH:MM:SS).</li>
+        <li>Mostrar tiempo actual de reproducción.</li>
+        <li>Arrastrar el slider para adelantar o retroceder.</li>
+        <li>Clic en cualquier punto de la barra para ir a ese momento.</li>
+        <li>Compatible únicamente con videos importados (no aplica a webcam en vivo).</li>
+    </ul>
+    <p><strong>Marcas de segmentos sospechosos (SegmentTracker):</strong></p>
+    <table>
+        <thead>
+            <tr><th>Color</th><th>Tipo</th><th>Condición</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Amarillo (#ffaa00)</td><td>Riesgo medio</td><td>nivel_riesgo = MEDIO</td></tr>
+            <tr><td>Rojo (#ff3366)</td><td>Riesgo alto</td><td>nivel_riesgo = ALTO</td></tr>
+            <tr><td>Rojo intenso (#ff0033)</td><td>Sospechoso alta confianza</td><td>Predicción SOSPECHOSO y confianza ≥ 85 %</td></tr>
+        </tbody>
+    </table>
+    <p>
+        <strong>Navegación por eventos:</strong> al hacer clic sobre una marca de color en la barra,
+        el video salta automáticamente a ese instante (ejemplo: clic en marca de 02:35 → seek a 02:35).
+        El evento queda registrado en el log de actividades.
+    </p>
+    <p>
+        Archivo de segmentos: <code>ml/segment_tracker.py</code>. Evita marcas duplicadas con
+        un intervalo mínimo de 2 segundos entre marcas en la misma posición.
+    </p>
 
-    <h3>9.10 Grabación de evidencia (clips)</h3>
-    <p>Si confianza ≥ 90%, guarda clip MP4 de 5 segundos antes y 5 después en <code>evidence/clips/</code>.</p>
+    <h3 id="sprint3-evidencia">9.9 Módulos 9 y 10 — Captura y grabación de evidencia</h3>
+    <p>
+        Archivo: <code>ml/evidence_manager.py</code>. Clase auxiliar: <code>FrameRingBuffer</code>
+        (buffer circular de frames para clips).
+    </p>
+    <table>
+        <thead>
+            <tr><th>Tipo</th><th>Umbral</th><th>Formato</th><th>Carpeta</th><th>Nombre archivo</th></tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Captura de pantalla</td>
+                <td>Confianza ≥ 85 %</td>
+                <td>PNG</td>
+                <td>evidence/</td>
+                <td>2026-06-08_14-35-22.png</td>
+            </tr>
+            <tr>
+                <td>Clip de video</td>
+                <td>Confianza ≥ 90 %</td>
+                <td>MP4</td>
+                <td>evidence/clips/</td>
+                <td>2026-06-08_14-35-22.mp4</td>
+            </tr>
+        </tbody>
+    </table>
+    <p><strong>Clip de evidencia:</strong> incluye 5 segundos de frames anteriores (desde buffer
+    circular) más 5 segundos posteriores al evento. Cooldown de 3 segundos entre capturas PNG
+    consecutivas para evitar saturación de disco.</p>
+    <p>
+        Cada captura o clip incrementa el contador correspondiente en el panel de estadísticas
+        y genera una entrada en el registro de actividades con el nombre del archivo guardado.
+    </p>
 
-    <h3>9.11 Panel de estadísticas</h3>
-    <p>Total alertas, total sospechosos, tiempo analizado, riesgo promedio, cantidad de capturas y clips.</p>
+    <h3 id="sprint3-estadisticas">9.10 Módulo 11 — Panel de estadísticas de sesión</h3>
+    <p>
+        Archivo: <code>ml/statistics.py</code>. Clase: <code>SessionStatistics</code>.
+        Se reinicia al pulsar Iniciar Monitoreo.
+    </p>
+    <table>
+        <thead>
+            <tr><th>Métrica</th><th>Descripción</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Total alertas</td><td>Alertas de movimiento generadas (Sprint 2 + 3)</td></tr>
+            <tr><td>Total sospechosos</td><td>Predicciones clasificadas como SOSPECHOSO</td></tr>
+            <tr><td>Tiempo analizado</td><td>Duración acumulada del monitoreo activo</td></tr>
+            <tr><td>Riesgo promedio</td><td>Media de intensidad de movimiento durante la sesión</td></tr>
+            <tr><td>Capturas</td><td>Cantidad de PNG guardados en evidence/</td></tr>
+            <tr><td>Clips</td><td>Cantidad de MP4 guardados en evidence/clips/</td></tr>
+        </tbody>
+    </table>
 
-    <h3>9.12 Optimización</h3>
-    <p>Flujo óptico en resolución reducida (640×360), registro de dataset cada 30 frames, buffer circular para clips, procesamiento en el hilo principal de Qt sin bloqueos adicionales.</p>
+    <h3 id="sprint3-manual">9.11 Manual de uso completo — Sprint 3</h3>
+    <p><strong>Paso 1 — Preparar datos de entrenamiento:</strong></p>
+    <ol>
+        <li>Importar un video representativo o activar webcam.</li>
+        <li>Pulsar Iniciar Monitoreo (se genera dataset automático cada 30 frames).</li>
+        <li>Observar comportamientos y pulsar Guardar como Normal o Guardar como Sospechoso en momentos clave.</li>
+        <li>Repetir con distintos videos hasta tener suficientes muestras de ambas clases.</li>
+    </ol>
+    <p><strong>Paso 2 — Entrenar y guardar modelo:</strong></p>
+    <ol>
+        <li>Pulsar Entrenar Modelo (requiere ≥4 muestras con ambas etiquetas).</li>
+        <li>Verificar mensaje de precisión en el diálogo.</li>
+        <li>Pulsar Guardar Modelo → ingresar nombre (ej. <code>modelo_v1.pkl</code>).</li>
+    </ol>
+    <p><strong>Paso 3 — Analizar con modelo entrenado:</strong></p>
+    <ol>
+        <li>Importar video o activar webcam.</li>
+        <li>Pulsar Iniciar Monitoreo.</li>
+        <li>Observar Predicción y Confianza en panel lateral.</li>
+        <li>Revisar marcas en barra de tiempo y hacer clic para saltar a eventos.</li>
+        <li>Consultar evidence/ para capturas y clips generados automáticamente.</li>
+    </ol>
+    <p><strong>Paso 4 — Usar modelo en otra computadora:</strong></p>
+    <ol>
+        <li>En PC de entrenamiento: Exportar Modelo → guardar .pkl.</li>
+        <li>En PC destino: Importar Modelo → seleccionar .pkl.</li>
+        <li>Analizar videos sin volver a entrenar.</li>
+    </ol>
+
+    <h3 id="sprint3-constantes">9.12 Módulo 12 — Optimización y constantes Sprint 3</h3>
+    <p>Estrategias de optimización implementadas:</p>
+    <ul>
+        <li>Flujo óptico en resolución reducida (640×360) — sin cambios respecto a Sprint 2.</li>
+        <li>Registro de dataset cada 30 frames, no en cada frame.</li>
+        <li>Buffer circular limitado (~6 s) para clips, sin almacenar todo el video en RAM.</li>
+        <li>RandomForest con n_jobs=-1 para usar todos los núcleos CPU en entrenamiento.</li>
+        <li>Predicción vectorizada con NumPy (una fila por frame).</li>
+        <li>UI con QScrollArea en panel lateral para evitar recorte de contenido.</li>
+    </ul>
+    <p><strong>Constantes en utils/constants.py (Sprint 3):</strong></p>
+    <table>
+        <thead>
+            <tr><th>Constante</th><th>Valor</th><th>Descripción</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>DATASET_PATH</td><td>dataset/dataset.csv</td><td>Ruta del dataset</td></tr>
+            <tr><td>MODELS_DIR</td><td>models/</td><td>Carpeta de modelos .pkl</td></tr>
+            <tr><td>EVIDENCE_DIR</td><td>evidence/</td><td>Capturas PNG</td></tr>
+            <tr><td>EVIDENCE_CLIPS_DIR</td><td>evidence/clips/</td><td>Clips MP4</td></tr>
+            <tr><td>DATASET_AUTO_INTERVAL</td><td>30</td><td>Frames entre registros automáticos</td></tr>
+            <tr><td>EVIDENCE_SCREENSHOT_CONF</td><td>85.0</td><td>Umbral confianza para PNG</td></tr>
+            <tr><td>EVIDENCE_CLIP_CONF</td><td>90.0</td><td>Umbral confianza para MP4</td></tr>
+            <tr><td>CLIP_BEFORE_SEC</td><td>5.0</td><td>Segundos previos en clip</td></tr>
+            <tr><td>CLIP_AFTER_SEC</td><td>5.0</td><td>Segundos posteriores en clip</td></tr>
+            <tr><td>RISK_ENCODING</td><td>BAJO=0, MEDIO=1, ALTO=2</td><td>Codificación para ML</td></tr>
+            <tr><td>LABEL_NORMAL</td><td>normal</td><td>Etiqueta clase normal</td></tr>
+            <tr><td>LABEL_SOSPECHOSO</td><td>sospechoso</td><td>Etiqueta clase sospechosa</td></tr>
+        </tbody>
+    </table>
+
+    <h3 id="sprint3-modulos">9.13 Descripción de módulos nuevos (ml/ y ui/)</h3>
+    <table>
+        <thead>
+            <tr><th>Archivo</th><th>Clase principal</th><th>Responsabilidad</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>ml/dataset_manager.py</td><td>DatasetManager</td><td>CSV automático y manual</td></tr>
+            <tr><td>ml/model_trainer.py</td><td>ModelTrainer</td><td>Entrenar, guardar, cargar, importar, exportar</td></tr>
+            <tr><td>ml/predictor.py</td><td>BehaviorPredictor</td><td>Predicción NORMAL/SOSPECHOSO + confianza</td></tr>
+            <tr><td>ml/evidence_manager.py</td><td>EvidenceManager</td><td>PNG, MP4, buffer de frames</td></tr>
+            <tr><td>ml/statistics.py</td><td>SessionStatistics</td><td>Contadores de sesión</td></tr>
+            <tr><td>ml/segment_tracker.py</td><td>SegmentTracker</td><td>Marcas en barra de tiempo</td></tr>
+            <tr><td>ui/timeline_bar.py</td><td>TimelineBar</td><td>Slider, tiempos, marcas, seek</td></tr>
+            <tr><td>video/frame_buffer.py</td><td>FrameRingBuffer</td><td>Buffer circular para clips</td></tr>
+        </tbody>
+    </table>
+    <p>
+        Integración central en <code>ui/main_window.py</code>: método <code>_update_ml_analysis()</code>
+        conecta predicción, segmentos, evidencia y estadísticas en cada frame procesado.
+    </p>
 
     <h2 id="interfaz">10. Interfaz y diseño visual</h2>
     <ul>
@@ -494,15 +836,16 @@ python main.py</pre>
         <li>Acentos azul neón y rojo neón.</li>
         <li>Barra superior con nombre SIDACS, reloj y badge EN LINEA / ANALISIS ACTIVO.</li>
         <li>Botones sin emojis ni iconos en las etiquetas.</li>
-        <li>Panel lateral con tarjetas de métricas, barra de progreso y log HTML coloreado.</li>
+        <li>Panel lateral con tarjetas de métricas, predicción ML, confianza, estadísticas, barra de progreso y log HTML coloreado.</li>
+        <li>Barra de tiempo bajo el video con marcas de segmentos sospechosos (Sprint 3).</li>
+        <li>Segunda fila de botones ML en barra de controles (Sprint 3).</li>
     </ul>
 
     <h2 id="pendiente">11. Funcionalidades pendientes</h2>
     <ul>
         <li>Módulo de historial persistente (base de datos o archivos).</li>
         <li>Clasificadores adicionales y validación cruzada avanzada.</li>
-        <li>Ajuste de sensibilidad desde la interfaz.</li>
-        <li>Grabación de clips de alerta.</li>
+        <li>Ajuste de sensibilidad y umbrales desde la interfaz.</li>
     </ul>
 
     <h2 id="changelog">12. Registro de cambios</h2>
@@ -564,13 +907,15 @@ python main.py</pre>
     <div class="changelog-entry">
         <p class="changelog-date">Sprint 3 — Análisis inteligente de comportamientos sospechosos</p>
         <p>
-            Nuevo paquete ml/ con dataset_manager, model_trainer (RandomForestClassifier), predictor,
-            evidence_manager, statistics y segment_tracker. Carpetas dataset/, models/, evidence/.
-            Barra de tiempo ui/timeline_bar.py con marcas de segmentos y navegación por eventos.
-            Botones de etiquetado manual, entrenamiento, guardar/cargar/importar/exportar modelos.
-            Predicción NORMAL/SOSPECHOSO con confianza en panel lateral. Capturas PNG (≥85%) y clips
-            MP4 (≥90%). Panel de estadísticas de sesión. Reproductor extendido con seek y posición.
-            Versión 3.0.0-sprint3. Dependencia scikit-learn agregada.
+            Nuevo paquete ml/ con dataset_manager, model_trainer (RandomForestClassifier),
+            predictor, evidence_manager, statistics y segment_tracker. Carpetas dataset/, models/,
+            evidence/ y evidence/clips/. Barra de tiempo ui/timeline_bar.py con marcas de segmentos
+            y navegación por eventos. Botones de etiquetado manual, entrenamiento, guardar/cargar/
+            importar/exportar modelos. Predicción NORMAL/SOSPECHOSO con confianza en panel lateral.
+            Capturas PNG (confianza ≥ 85 %) y clips MP4 (≥ 90 %, 5 s antes + 5 s después). Panel de
+            estadísticas de sesión. Reproductor extendido con seek_seconds y position_changed.
+            Versión 3.0.0-sprint3. Dependencia scikit-learn agregada. documentacion.html ampliado
+            con documentación detallada del Sprint 3.
         </p>
     </div>
 
