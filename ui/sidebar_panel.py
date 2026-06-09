@@ -74,6 +74,10 @@ class SidebarPanel(QWidget):
         header.setObjectName("sidebarHeader")
         layout.addWidget(header)
 
+        self.status_card = MetricCard("ESTADO DEL SISTEMA", "EN LINEA", "systemOnline")
+        self.status_card.value_label.setObjectName("systemOnline")
+        layout.addWidget(self.status_card)
+
         self.risk_card = MetricCard("NIVEL DE RIESGO", "BAJO", "riskLow")
         self.risk_card.value_label.setObjectName("riskLow")
         layout.addWidget(self.risk_card)
@@ -116,6 +120,10 @@ class SidebarPanel(QWidget):
         conf_layout.addWidget(self.confidence_bar)
         conf_layout.addWidget(self.confidence_value)
         layout.addWidget(conf_section)
+
+        self.alerts_count_card = MetricCard("ALERTAS ACTIVAS", "0", "alertCount")
+        self.alerts_count_card.value_label.setObjectName("alertCount")
+        layout.addWidget(self.alerts_count_card)
 
         stats_title = QLabel("ESTADISTICAS DE SESION")
         stats_title.setObjectName("cardTitle")
@@ -172,6 +180,16 @@ class SidebarPanel(QWidget):
         item.setForeground(Qt.gray)
         return item
 
+    def set_system_status(self, status: str, active: bool = False) -> None:
+        self.status_card.set_value(status)
+        obj = "systemActive" if active else "systemOnline"
+        self.status_card.value_label.setObjectName(obj)
+        self.status_card.value_label.style().unpolish(self.status_card.value_label)
+        self.status_card.value_label.style().polish(self.status_card.value_label)
+
+    def set_alert_count(self, count: int) -> None:
+        self.alerts_count_card.set_value(str(count))
+
     def set_risk_level(self, level: str) -> None:
         styles = {"BAJO": "riskLow", "MEDIO": "riskMedium", "ALTO": "riskHigh"}
         key = level.upper()
@@ -206,6 +224,8 @@ class SidebarPanel(QWidget):
     def update_statistics(self, stats: dict) -> None:
         for key, lbl in self.stats_labels.items():
             lbl.setText(str(stats.get(key, "0")))
+        if "total_alerts" in stats:
+            self.set_alert_count(int(stats.get("total_alerts", 0)))
 
     def add_alert(self, message: str) -> None:
         if self.alerts_list.count() == 1:

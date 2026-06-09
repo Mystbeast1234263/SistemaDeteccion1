@@ -117,7 +117,7 @@
     <h1>Sistema Inteligente de Detección y Análisis de Comportamientos Sospechosos</h1>
     <p class="meta">
         <strong>Proyecto:</strong> SIDACS (SistemaDeteccion)<br>
-        <strong>Versión actual:</strong> 3.0.0-sprint3<br>
+        <strong>Versión actual:</strong> 4.0.0-sprint4<br>
         <strong>Ubicación del proyecto:</strong> F:\emergentes\emergentes\SistemaDeteccion<br>
         <strong>Última actualización de este documento:</strong> 8 de junio de 2026<br>
         <strong>Archivo:</strong> documentacion.html
@@ -151,6 +151,12 @@
         <li><a href="#sprint3-manual">9.11 Manual de uso Sprint 3</a></li>
         <li><a href="#sprint3-constantes">9.12 Constantes Sprint 3</a></li>
         <li><a href="#sprint3-modulos">9.13 Módulos nuevos (ml/ y ui/)</a></li>
+        <li><a href="#sprint4">Sprint 4 — Dashboard final y evidencias</a></li>
+        <li><a href="#sprint4-dashboard">10.1 Dashboard final</a></li>
+        <li><a href="#sprint4-evidencias">10.2 Centro de evidencias</a></li>
+        <li><a href="#sprint4-historial">10.3 Historial de incidentes</a></li>
+        <li><a href="#sprint4-sonido">10.5 Alertas sonoras</a></li>
+        <li><a href="#sprint4-optim">10.6 Optimizaciones Sprint 4</a></li>
         <li><a href="#interfaz">Interfaz y diseño visual</a></li>
         <li><a href="#pendiente">Funcionalidades pendientes</a></li>
         <li><a href="#changelog">Registro de cambios</a></li>
@@ -171,6 +177,8 @@
         El Sprint 3 transforma SIDACS de un detector de movimiento a un sistema capaz de aprender
         comportamientos sospechosos mediante Machine Learning clásico (scikit-learn), utilizando las
         características MotionFeatures del Sprint 2 como entrada principal del modelo RandomForestClassifier.
+        El Sprint 4 completa el dashboard de supervisión con centro de evidencias integrado, historial
+        persistente de incidentes, alertas sonoras configurables y optimizaciones de rendimiento.
     </p>
 
     <h2 id="tecnologias">2. Tecnologías</h2>
@@ -830,7 +838,93 @@ Confianza: 92%</pre>
         conecta predicción, segmentos, evidencia y estadísticas en cada frame procesado.
     </p>
 
-    <h2 id="interfaz">10. Interfaz y diseño visual</h2>
+    <h2 id="sprint4">10. Sprint 4 — Dashboard final, centro de evidencias y optimización</h2>
+    <p>
+        El Sprint 4 completa la interfaz de supervisión para exámenes: dashboard enriquecido,
+        sección de evidencias integrada, historial persistente de incidentes, alertas sonoras
+        y mejoras de rendimiento. Compatible con Sprint 1 (video/webcam), Sprint 2 (flujo óptico)
+        y Sprint 3 (ML, timeline, capturas automáticas).
+    </p>
+
+    <h3 id="sprint4-dashboard">10.1 Dashboard final</h3>
+    <p>El panel lateral (<code>ui/sidebar_panel.py</code>) muestra:</p>
+    <ul>
+        <li><strong>Estado del sistema</strong> — EN LINEA, VIDEO CARGADO, ANALISIS ACTIVO.</li>
+        <li><strong>Nivel de riesgo</strong> — BAJO / MEDIO / ALTO (flujo óptico).</li>
+        <li><strong>Intensidad de movimiento</strong> — barra 0–100 %.</li>
+        <li><strong>Predicción del modelo</strong> — NORMAL / SOSPECHOSO.</li>
+        <li><strong>Confianza</strong> — porcentaje del RandomForest.</li>
+        <li><strong>Alertas activas</strong> — contador destacado en tarjeta dedicada.</li>
+        <li><strong>Estadísticas de sesión</strong> — alertas, sospechosos, tiempo, riesgo promedio, capturas, clips.</li>
+    </ul>
+
+    <h3 id="sprint4-evidencias">10.2 Centro de evidencias</h3>
+    <p>
+        Nueva sección accesible desde la barra de navegación <strong>Monitoreo | Evidencias</strong>
+        (<code>ui/nav_bar.py</code>) o el botón <strong>Evidencias</strong> en la barra de controles.
+        No reemplaza la pantalla principal de monitoreo.
+    </p>
+    <p>Módulos: <code>ui/evidence_panel.py</code>, <code>ml/evidence_catalog.py</code>.</p>
+    <table>
+        <thead><tr><th>Pestaña</th><th>Origen</th><th>Función</th></tr></thead>
+        <tbody>
+            <tr><td>Capturas</td><td><code>evidence/screenshots/</code></td><td>Lista con miniaturas, visor integrado PNG</td></tr>
+            <tr><td>Clips</td><td><code>evidence/clips/</code></td><td>Lista de MP4, reproductor embebido OpenCV + QTimer</td></tr>
+            <tr><td>Incidentes</td><td><code>evidence/incidents.json</code></td><td>Historial con detalle y salto al video</td></tr>
+        </tbody>
+    </table>
+    <p>Cada evidencia muestra: fecha, hora, confianza, nivel de riesgo y tipo de evento. Ordenamiento por fecha, riesgo o confianza.</p>
+
+    <h3 id="sprint4-historial">10.3 Historial de incidentes</h3>
+    <p>
+        <code>ml/incident_history.py</code> persiste eventos en <code>evidence/incidents.json</code>.
+        Se registran automáticamente: comportamiento sospechoso (ML), movimiento inusual, riesgo alto,
+        capturas y clips guardados. Formato de lista:
+    </p>
+    <pre>14:35 — Comportamiento sospechoso
+Confianza: 91% | Riesgo: ALTO</pre>
+    <p>Ordenamiento: fecha reciente/antigua, riesgo alto primero, confianza alta primero.</p>
+    <p>Al seleccionar un incidente con posición en video, la app vuelve a Monitoreo y hace seek al instante correspondiente.</p>
+
+    <h3 id="sprint4-timeline">10.4 Barra de tiempo inteligente (mejoras)</h3>
+    <p><code>ui/timeline_bar.py</code> — además de Sprint 3:</p>
+    <ul>
+        <li>Botones <strong>Inicio</strong>, <strong>-10s</strong>, <strong>+10s</strong> para navegación tipo YouTube.</li>
+        <li>Duración total y tiempo actual (MM:SS o HH:MM:SS).</li>
+        <li>Marcas amarillo / rojo / rojo intenso con clic para saltar al evento.</li>
+    </ul>
+
+    <h3 id="sprint4-sonido">10.5 Alertas sonoras</h3>
+    <p><code>utils/sound_alerts.py</code> — <code>SoundAlertManager</code>:</p>
+    <ul>
+        <li>Confianza ≥ 85 % → pitido corto (880 Hz, 180 ms) vía <code>winsound</code> en Windows.</li>
+        <li>Confianza ≥ 95 % → secuencia de tres tonos más intensa.</li>
+        <li>Checkbox <strong>Alertas sonoras</strong> en barra de controles para activar/desactivar.</li>
+        <li>Cooldown de 3 s entre alertas sonoras (<code>SOUND_ALERT_COOLDOWN_SEC</code>).</li>
+    </ul>
+
+    <h3 id="sprint4-optim">10.6 Optimizaciones Sprint 4</h3>
+    <ul>
+        <li><code>UI_UPDATE_INTERVAL</code> aumentado a 4 frames — menos actualizaciones del sidebar.</li>
+        <li><code>EVIDENCE_FRAME_INTERVAL</code> aumentado a 3 — menos copias al buffer de evidencia.</li>
+        <li>Capturas en subcarpeta <code>evidence/screenshots/</code> — organización y escaneo eficiente.</li>
+        <li>Reproductor de clips se detiene al salir de la sección Evidencias.</li>
+        <li>Alertas sonoras en hilo daemon — no bloquean la UI.</li>
+    </ul>
+
+    <h3 id="sprint4-modulos">10.7 Módulos nuevos Sprint 4</h3>
+    <table>
+        <thead><tr><th>Archivo</th><th>Clase</th><th>Responsabilidad</th></tr></thead>
+        <tbody>
+            <tr><td>ui/nav_bar.py</td><td>NavBar</td><td>Pestañas Monitoreo / Evidencias</td></tr>
+            <tr><td>ui/evidence_panel.py</td><td>EvidencePanel, ClipViewer</td><td>Centro de evidencias y visor</td></tr>
+            <tr><td>ml/incident_history.py</td><td>IncidentHistory</td><td>JSON persistente de incidentes</td></tr>
+            <tr><td>ml/evidence_catalog.py</td><td>EvidenceCatalog</td><td>Escaneo de carpetas + metadatos</td></tr>
+            <tr><td>utils/sound_alerts.py</td><td>SoundAlertManager</td><td>Pitidos según confianza ML</td></tr>
+        </tbody>
+    </table>
+
+    <h2 id="interfaz">11. Interfaz y diseño visual</h2>
     <ul>
         <li>Tema oscuro: fondo #0a0e17, paneles #0f1624.</li>
         <li>Acentos azul neón y rojo neón.</li>
@@ -839,16 +933,20 @@ Confianza: 92%</pre>
         <li>Panel lateral con tarjetas de métricas, predicción ML, confianza, estadísticas, barra de progreso y log HTML coloreado.</li>
         <li>Barra de tiempo bajo el video con marcas de segmentos sospechosos (Sprint 3).</li>
         <li>Segunda fila de botones ML en barra de controles (Sprint 3).</li>
+        <li>Barra de navegación Monitoreo / Evidencias (Sprint 4).</li>
+        <li>Centro de evidencias con pestañas Capturas, Clips e Incidentes (Sprint 4).</li>
+        <li>Checkbox de alertas sonoras en barra de controles (Sprint 4).</li>
+        <li>Estado del sistema y contador de alertas en panel lateral (Sprint 4).</li>
     </ul>
 
-    <h2 id="pendiente">11. Funcionalidades pendientes</h2>
+    <h2 id="pendiente">12. Funcionalidades pendientes</h2>
     <ul>
-        <li>Módulo de historial persistente (base de datos o archivos).</li>
         <li>Clasificadores adicionales y validación cruzada avanzada.</li>
         <li>Ajuste de sensibilidad y umbrales desde la interfaz.</li>
+        <li>Exportación del historial de incidentes a PDF o CSV.</li>
     </ul>
 
-    <h2 id="changelog">12. Registro de cambios</h2>
+    <h2 id="changelog">13. Registro de cambios</h2>
     <p>Historial cronológico de modificaciones al proyecto.</p>
 
     <div class="changelog-entry">
@@ -919,8 +1017,22 @@ Confianza: 92%</pre>
         </p>
     </div>
 
+    <div class="changelog-entry">
+        <p class="changelog-date">Sprint 4 — Dashboard final, evidencias y optimización</p>
+        <p>
+            Centro de evidencias integrado (ui/evidence_panel.py) con capturas, clips e incidentes.
+            Navegación Monitoreo/Evidencias (ui/nav_bar.py). Historial persistente en
+            evidence/incidents.json (ml/incident_history.py). Catálogo de evidencias
+            (ml/evidence_catalog.py). Alertas sonoras con winsound (utils/sound_alerts.py).
+            Dashboard ampliado: estado del sistema, alertas activas, estadísticas completas.
+            Barra de tiempo con botones Inicio/-10s/+10s. Capturas en evidence/screenshots/.
+            Checkbox alertas sonoras. Optimización UI_UPDATE_INTERVAL=4, EVIDENCE_FRAME_INTERVAL=3.
+            Versión 4.0.0-sprint4.
+        </p>
+    </div>
+
     <p style="margin-top: 32px; font-size: 10pt; color: #4a6278; text-align: center;">
-        SIDACS — Documentación v3.0.0-sprint3
+        SIDACS — Documentación v4.0.0-sprint4
     </p>
 
 </body>

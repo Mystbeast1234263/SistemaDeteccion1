@@ -1,7 +1,7 @@
 """Constantes globales de la aplicación."""
 
 APP_NAME = "Sistema Inteligente de Detección y Análisis de Comportamientos Sospechosos"
-APP_VERSION = "3.0.0-sprint3"
+APP_VERSION = "4.0.0-sprint4"
 APP_SHORT_NAME = "SIDACS"
 
 COLORS = {
@@ -55,7 +55,9 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 DATASET_DIR = ROOT_DIR / "dataset"
 MODELS_DIR = ROOT_DIR / "models"
 EVIDENCE_DIR = ROOT_DIR / "evidence"
+EVIDENCE_SCREENSHOTS_DIR = EVIDENCE_DIR / "screenshots"
 EVIDENCE_CLIPS_DIR = EVIDENCE_DIR / "clips"
+INCIDENTS_PATH = EVIDENCE_DIR / "incidents.json"
 DATASET_PATH = DATASET_DIR / "dataset.csv"
 
 DATASET_COLUMNS = [
@@ -80,8 +82,23 @@ CLIP_BEFORE_SEC = 5.0
 CLIP_AFTER_SEC = 5.0
 
 # Rendimiento — video y UI
-UI_UPDATE_INTERVAL = 3
-EVIDENCE_FRAME_INTERVAL = 2
+UI_UPDATE_INTERVAL = 4
+EVIDENCE_FRAME_INTERVAL = 3
 VIDEO_BUFFER_SIZE = 1
 SUSPICIOUS_LOG_COOLDOWN_SEC = 5.0
+SOUND_ALERT_COOLDOWN_SEC = 3.0
 
+# Sprint 4 — Alertas sonoras
+SOUND_ALERT_MIN_CONF = 85.0
+SOUND_ALERT_STRONG_CONF = 95.0
+
+# Sprint 4 — Timeline
+TIMELINE_SKIP_SEC = 10.0
+
+# Sprint 4 — Ordenamiento de incidentes
+SORT_DATE_DESC = "date_desc"
+SORT_DATE_ASC = "date_asc"
+SORT_RISK_DESC = "risk_desc"
+SORT_CONFIDENCE_DESC = "confidence_desc"
+
+RISK_SORT_ORDER = {"ALTO": 3, "MEDIO": 2, "BAJO": 1, "": 0}

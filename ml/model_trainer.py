@@ -126,17 +126,50 @@ class ModelTrainer:
         if not path.exists():
             return False, f"No se encontró el modelo: {path}"
 
+        if path.stat().st_size > 50_000_000:
+            return False, "El archivo es demasiado grande. Puede estar corrupto."
+
         try:
             with open(path, "rb") as f:
                 payload = pickle.load(f)
 
-            self.model = payload["model"]
-            self.label_encoder = payload.get("label_encoder", self.label_encoder)
+            if not isinstance(payload, dict) or "model" not in payload:
+                return False, "Archivo invalido: no es un modelo SIDACS (.pkl)."
+
+            model = payload["model"]
+            if not hasattr(model, "predict_proba"):
+                return False, "El archivo no contiene un clasificador valido."
+
+            self.model = model
+            le = payload.get("label_encoder")
+            if le is not None and hasattr(le, "classes_"):
+                self.label_encoder = le
+            else:
+                self.label_encoder = LabelEncoder()
+                self.label_encoder.fit([LABEL_NORMAL, LABEL_SOSPECHOSO])
+
             self._metrics = payload.get("metrics", {})
-            self._model_path = path
+            self._model_path = path.resolve()
             return True, f"Modelo cargado: {path.name}"
+        except MemoryError:
+            return False, (
+                "El archivo del modelo esta corrupto. Entrene de nuevo y guarde un modelo nuevo."
+            )
         except Exception as exc:
             return False, f"Error al cargar: {exc}"
+
+    def load_latest(self) -> tuple[bool, str]:
+        """Carga el .pkl mas reciente en models/."""
+        candidates = sorted(
+            self.models_dir.glob("*.pkl"),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        )
+        for path in candidates:
+            ok, msg = self.load(path)
+            if ok:
+                return True, msg
+        return False, "No hay modelos validos en la carpeta models/."
 
     def export_model(self, dest_path: str) -> tuple[bool, str]:
         try:

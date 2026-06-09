@@ -2,10 +2,10 @@
 
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QColor, QPainter
-from PyQt5.QtWidgets import QHBoxLayout, QLabel, QSlider, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QHBoxLayout, QLabel, QPushButton, QSlider, QVBoxLayout, QWidget
 
 from ml.segment_tracker import SegmentType, TimelineSegment
-from utils.constants import COLORS
+from utils.constants import COLORS, TIMELINE_SKIP_SEC
 
 
 class TimelineSlider(QSlider):
@@ -96,6 +96,7 @@ class TimelineBar(QWidget):
         super().__init__(parent)
         self.setObjectName("timelineBar")
         self._duration = 0.0
+        self._current = 0.0
         self._build_ui()
 
     def _build_ui(self) -> None:
@@ -121,6 +122,23 @@ class TimelineBar(QWidget):
         self.slider.marker_clicked.connect(self.marker_clicked.emit)
         layout.addWidget(self.slider)
 
+        nav_row = QHBoxLayout()
+        nav_row.setSpacing(6)
+        self.btn_start = QPushButton("Inicio")
+        self.btn_start.setObjectName("btnTimelineNav")
+        self.btn_back = QPushButton(f"-{int(TIMELINE_SKIP_SEC)}s")
+        self.btn_back.setObjectName("btnTimelineNav")
+        self.btn_forward = QPushButton(f"+{int(TIMELINE_SKIP_SEC)}s")
+        self.btn_forward.setObjectName("btnTimelineNav")
+        self.btn_start.clicked.connect(lambda: self.seek_requested.emit(0.0))
+        self.btn_back.clicked.connect(self._skip_backward)
+        self.btn_forward.clicked.connect(self._skip_forward)
+        nav_row.addWidget(self.btn_start)
+        nav_row.addWidget(self.btn_back)
+        nav_row.addWidget(self.btn_forward)
+        nav_row.addStretch()
+        layout.addLayout(nav_row)
+
         legend = QLabel("Amarillo: riesgo medio | Rojo: riesgo alto | Rojo intenso: sospechoso")
         legend.setStyleSheet(f"color: {COLORS['text_muted']}; font-size: 9px;")
         layout.addWidget(legend)
@@ -129,9 +147,14 @@ class TimelineBar(QWidget):
         self._duration = duration
         self.slider.set_duration(duration)
         self.lbl_total.setText(self._format_time(duration))
-        self.setEnabled(duration > 0)
+        enabled = duration > 0
+        self.setEnabled(enabled)
+        self.btn_start.setEnabled(enabled)
+        self.btn_back.setEnabled(enabled)
+        self.btn_forward.setEnabled(enabled)
 
     def set_position(self, seconds: float) -> None:
+        self._current = seconds
         self.slider.set_position(seconds)
         self.lbl_current.setText(self._format_time(seconds))
 
@@ -140,6 +163,7 @@ class TimelineBar(QWidget):
 
     def reset(self) -> None:
         self._duration = 0.0
+        self._current = 0.0
         self.slider.set_duration(0)
         self.slider.set_position(0)
         self.slider.set_segments([])
@@ -147,12 +171,22 @@ class TimelineBar(QWidget):
         self.lbl_total.setText("00:00")
         self.setEnabled(False)
 
+    def _skip_backward(self) -> None:
+        target = max(0.0, self._current - TIMELINE_SKIP_SEC)
+        self.seek_requested.emit(target)
+
+    def _skip_forward(self) -> None:
+        target = min(self._duration, self._current + TIMELINE_SKIP_SEC)
+        self.seek_requested.emit(target)
+
     def _on_slider_moved(self, value: int) -> None:
         seconds = value / 1000.0
+        self._current = seconds
         self.lbl_current.setText(self._format_time(seconds))
 
     def _on_slider_released(self) -> None:
         seconds = self.slider.value() / 1000.0
+        self._current = seconds
         self.seek_requested.emit(seconds)
 
     @staticmethod

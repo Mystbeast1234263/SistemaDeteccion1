@@ -1,0 +1,235 @@
+{
+  "incidents": [
+    {
+      "id": "55ea49c5",
+      "datetime": "2026-06-08 20:36:03",
+      "time_display": "20:36",
+      "event_type": "Clip sospechoso",
+      "confidence": 52.0,
+      "risk_level": "BAJO",
+      "file_path": "F:\\emergentes\\emergentes\\SistemaDeteccion\\evidence\\clips\\2026-06-08_20-35-55.mp4",
+      "file_type": "clip",
+      "video_time_sec": 0.2
+    },
+    {
+      "id": "bd1c90d4",
+      "datetime": "2026-06-08 20:35:55",
+      "time_display": "20:35",
+      "event_type": "Comportamiento sospechoso",
+      "confidence": 52.0,
+      "risk_level": "BAJO",
+      "file_path": "",
+      "file_type": "",
+      "video_time_sec": 0.2
+    },
+    {
+      "id": "82774b84",
+      "datetime": "2026-06-08 20:35:31",
+      "time_display": "20:35",
+      "event_type": "Captura sospechosa",
+      "confidence": 86.3,
+      "risk_level": "BAJO",
+      "file_path": "F:\\emergentes\\emergentes\\SistemaDeteccion\\evidence\\screenshots\\2026-06-08_20-35-31.png",
+      "file_type": "screenshot",
+      "video_time_sec": 16.5
+    },
+    {
+      "id": "06e11a1a",
+      "datetime": "2026-06-08 20:35:31",
+      "time_display": "20:35",
+      "event_type": "Movimiento inusual",
+      "confidence": 15.0,
+      "risk_level": "BAJO",
+      "file_path": "",
+      "file_type": "",
+      "video_time_sec": 16.5
+    },
+    {
+      "id": "a93d24c2",
+      "datetime": "2026-06-08 20:35:28",
+      "time_display": "20:35",
+      "event_type": "Comportamiento sospechoso",
+      "confidence": 74.0,
+      "risk_level": "BAJO",
+      "file_path": "",
+      "file_type": "",
+      "video_time_sec": 15.3
+    },
+    {
+      "id": "1a236007",
+      "datetime": "2026-06-08 20:35:27",
+      "time_display": "20:35",
+      "event_type": "Captura sospechosa",
+      "confidence": 92.0,
+      "risk_level": "BAJO",
+      "file_path": "F:\\emergentes\\emergentes\\SistemaDeteccion\\evidence\\screenshots\\2026-06-08_20-35-27.png",
+      "file_type": "screenshot",
+      "video_time_sec": 15.0
+    },
+    {
+      "id": "97b43aa3",
+      "datetime": "2026-06-08 20:35:24",
+      "time_display": "20:35",
+      "event_type": "Movimiento inusual",
+      "confidence": 17.0,
+      "risk_level": "BAJO",
+      "file_path": "",
+      "file_type": "",
+      "video_time_sec": 13.8
+    },
+    {
+      "id": "10e11580",
+      "datetime": "2026-06-08 20:35:23",
+      "time_display": "20:35",
+      "event_type": "Captura sospechosa",
+      "confidence": 86.0,
+      "risk_level": "BAJO",
+      "file_path": "F:\\emergentes\\emergentes\\SistemaDeteccion\\evidence\\screenshots\\2026-06-08_20-35-22.png",
+      "file_type": "screenshot",
+      "video_time_sec": 13.3
+    },
+    {
+      "id": "8cb5a318",
+      "datetime": "2026-06-08 20:35:19",
+      "time_display": "20:35",
+      "event_type": "Captura sospechosa",
+      "confidence": 96.0,
+      "risk_level": "BAJO",
+      "file_path": "F:\\emergentes\\emergentes\\SistemaDeteccion\\evidence\\screenshots\\2026-06-08_20-35-19.png",
+      "file_type": "screenshot",
+      "video_time_sec": 11.8
+    },
+    {
+      "id": "5d2dcde1",
+      "datetime": "2026-06-08 20:35:17",
+      "time_display": "20:35",
+      "event_type": "Comportamiento sospechoso",
+      "confidence": 51.2,
+      "risk_level": "BAJO",
+      "file_path": "",
+      "file_type": "",
+      "video_time_sec": 11.3
+    },
+    {
+      "id": "3057556f",
+      "datetime": "2026-06-08 20:35:15",
+      "time_display": "20:35",
+      "event_type": "Movimiento inusual",
+      "confidence": 15.0,
+      "risk_level": "BAJO",
+      "file_path": "",
+      "file_type": "",
+      "video_time_sec": 10.6
+    },
+    {
+      "id": "82dd8dd4",
+      "datetime": "2026-06-08 20:35:12",
+      "time_display": "20:35",
+      "event_type": "Captura sospechosa",
+      "confidence": 88.0,
+      "risk_level": "BAJO",
+      "file_path": "F:\\emergentes\\emergentes\\SistemaDeteccion\\evidence\\screenshots\\2026-06-08_20-35-12.png",
+      "file_type": "screenshot",
+      "video_time_sec": 9.5
+    },
+    {
+      "id": "94796eca",
+      "datetime": "2026-06-08 20:35:10",
+      "time_display": "20:35",
+      "event_type": "Comportamiento sospechoso",
+      "confidence": 84.0,
+      "risk_level": "BAJO",
+      "file_path": "",
+      "file_type": "",
+      "video_time_sec": 8.6
+    },
+    {
+      "id": "3a4b18ce",
+      "datetime": "2026-06-08 20:34:57",
+      "time_display": "20:34",
+      "event_type": "Comportamiento sospechoso",
+      "confidence": 66.0,
+      "risk_level": "BAJO",
+      "file_path": "",
+      "file_type": "",
+      "video_time_sec": 6.4
+    },
+    {
+      "id": "296e1e51",
+      "datetime": "2026-06-08 20:34:52",
+      "time_display": "20:34",
+      "event_type": "Movimiento inusual",
+      "confidence": 17.0,
+      "risk_level": "BAJO",
+      "file_path": "",
+      "file_type": "",
+      "video_time_sec": 4.7
+    },
+    {
+      "id": "25ebb637",
+      "datetime": "2026-06-08 20:34:51",
+      "time_display": "20:34",
+      "event_type": "Comportamiento sospechoso",
+      "confidence": 58.0,
+      "risk_level": "BAJO",
+      "file_path": "",
+      "file_type": "",
+      "video_time_sec": 4.2
+    },
+    {
+      "id": "70e29545",
+      "datetime": "2026-06-08 20:34:50",
+      "time_display": "20:34",
+      "event_type": "Captura sospechosa",
+      "confidence": 85.7,
+      "risk_level": "BAJO",
+      "file_path": "F:\\emergentes\\emergentes\\SistemaDeteccion\\evidence\\screenshots\\2026-06-08_20-34-50.png",
+      "file_type": "screenshot",
+      "video_time_sec": 3.5
+    },
+    {
+      "id": "b1ab9283",
+      "datetime": "2026-06-08 20:34:47",
+      "time_display": "20:34",
+      "event_type": "Movimiento inusual",
+      "confidence": 15.0,
+      "risk_level": "BAJO",
+      "file_path": "",
+      "file_type": "",
+      "video_time_sec": 2.5
+    },
+    {
+      "id": "c6dd91c1",
+      "datetime": "2026-06-08 20:34:47",
+      "time_display": "20:34",
+      "event_type": "Captura sospechosa",
+      "confidence": 86.9,
+      "risk_level": "BAJO",
+      "file_path": "F:\\emergentes\\emergentes\\SistemaDeteccion\\evidence\\screenshots\\2026-06-08_20-34-46.png",
+      "file_type": "screenshot",
+      "video_time_sec": 2.4
+    },
+    {
+      "id": "ab2c729e",
+      "datetime": "2026-06-08 20:34:44",
+      "time_display": "20:34",
+      "event_type": "Captura sospechosa",
+      "confidence": 88.0,
+      "risk_level": "BAJO",
+      "file_path": "F:\\emergentes\\emergentes\\SistemaDeteccion\\evidence\\screenshots\\2026-06-08_20-34-43.png",
+      "file_type": "screenshot",
+      "video_time_sec": 1.2
+    },
+    {
+      "id": "e69116a7",
+      "datetime": "2026-06-08 20:34:41",
+      "time_display": "20:34",
+      "event_type": "Comportamiento sospechoso",
+      "confidence": 52.0,
+      "risk_level": "BAJO",
+      "file_path": "",
+      "file_type": "",
+      "video_time_sec": 0.2
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 """Barra de controles principales."""
 
-from PyQt5.QtWidgets import QHBoxLayout, QPushButton, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QCheckBox, QHBoxLayout, QPushButton, QVBoxLayout, QWidget
 
 
 class ControlBar(QWidget):
@@ -32,8 +32,9 @@ class ControlBar(QWidget):
         self.btn_stop.setObjectName("btnStop")
         self.btn_stop.setEnabled(False)
 
-        self.btn_history = QPushButton("Historial")
-        self.btn_history.setObjectName("btnHistory")
+        self.chk_sound = QCheckBox("Alertas sonoras")
+        self.chk_sound.setObjectName("chkSoundAlerts")
+        self.chk_sound.setChecked(True)
 
         row1.addWidget(self.btn_import)
         row1.addWidget(self.btn_webcam)
@@ -41,7 +42,7 @@ class ControlBar(QWidget):
         row1.addWidget(self.btn_start)
         row1.addWidget(self.btn_stop)
         row1.addStretch()
-        row1.addWidget(self.btn_history)
+        row1.addWidget(self.chk_sound)
         layout.addLayout(row1)
 
         row2 = QHBoxLayout()

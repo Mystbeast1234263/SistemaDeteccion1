@@ -365,27 +365,204 @@ QTextEdit#activityLog {
 
 QScrollBar:vertical {
     background: #0a0e17;
-    width: 8px;
-    border-radius: 4px;
+    width: 10px;
+    border-radius: 5px;
+    margin: 2px 0;
 }
 
 QScrollBar::handle:vertical {
-    background: #1e3a5f;
-    border-radius: 4px;
-    min-height: 20px;
+    background: #2a5080;
+    border-radius: 5px;
+    min-height: 30px;
+    border: 1px solid #1e3a5f;
 }
 
 QScrollBar::handle:vertical:hover {
     background: #00d4ff;
+    border-color: #00d4ff;
+}
+
+QScrollBar::add-page:vertical,
+QScrollBar::sub-page:vertical {
+    background: #0f1624;
+}
+
+QScrollBar:horizontal {
+    background: #0a0e17;
+    height: 10px;
+    border-radius: 5px;
+    margin: 0 2px;
+}
+
+QScrollBar::handle:horizontal {
+    background: #2a5080;
+    border-radius: 5px;
+    min-width: 30px;
+    border: 1px solid #1e3a5f;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background: #00d4ff;
 }
 
 QScrollBar::add-line:vertical,
-QScrollBar::sub-line:vertical {
+QScrollBar::sub-line:vertical,
+QScrollBar::add-line:horizontal,
+QScrollBar::sub-line:horizontal {
+    width: 0;
     height: 0;
+}
+
+QListWidget#evidenceList::item,
+QListWidget#incidentList::item {
+    padding: 10px 8px;
+    border-bottom: 1px solid #141c2e;
+    min-height: 48px;
+}
+
+QListWidget#evidenceList::item:selected,
+QListWidget#incidentList::item:selected {
+    background-color: #1a2840;
+    color: #00d4ff;
+    border-left: 3px solid #00d4ff;
 }
 
 QSplitter::handle {
     background-color: #1e3a5f;
     width: 2px;
+}
+
+QWidget#navBar {
+    background-color: #0a0e17;
+    border-bottom: 1px solid #1e3a5f;
+}
+
+QPushButton#btnNavMonitor, QPushButton#btnNavEvidence {
+    background-color: #141c2e;
+    color: #7a9bb8;
+    border: 1px solid #1e3a5f;
+    border-radius: 6px;
+    padding: 8px 20px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+QPushButton#btnNavMonitor:checked, QPushButton#btnNavEvidence:checked {
+    background-color: #1a2840;
+    color: #00d4ff;
+    border-color: #00d4ff;
+}
+
+QWidget#evidencePanel {
+    background-color: #080c14;
+}
+
+QLabel#evidenceHeader {
+    color: #00d4ff;
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+QTabWidget#evidenceTabs::pane {
+    border: 1px solid #1e3a5f;
+    background-color: #0f1624;
+    border-radius: 6px;
+}
+
+QTabWidget#evidenceTabs QTabBar::tab {
+    background-color: #141c2e;
+    color: #7a9bb8;
+    padding: 8px 16px;
+    border: 1px solid #1e3a5f;
+    margin-right: 2px;
+}
+
+QTabWidget#evidenceTabs QTabBar::tab:selected {
+    background-color: #1a2840;
+    color: #00d4ff;
+    border-color: #00d4ff;
+}
+
+QListWidget#evidenceList, QListWidget#incidentList {
+    background-color: #080c14;
+    color: #e8f4ff;
+    border: 1px solid #1e3a5f;
+    font-size: 10px;
+}
+
+QLabel#evidenceViewer {
+    background-color: #050810;
+    color: #4a6278;
+    border: 1px dashed #1e3a5f;
+    border-radius: 6px;
+}
+
+QLabel#incidentDetail {
+    background-color: #141c2e;
+    color: #e8f4ff;
+    border: 1px solid #1e3a5f;
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 11px;
+}
+
+QPushButton#btnEvidenceRefresh, QPushButton#btnEvidencePlay,
+QPushButton#btnEvidencePause, QPushButton#btnEvidenceStop,
+QPushButton#btnTimelineNav {
+    font-size: 10px;
+    padding: 6px 12px;
+    border-color: #7a9bb8;
+    color: #7a9bb8;
+}
+
+QPushButton#btnTimelineNav:hover {
+    border-color: #00d4ff;
+    color: #00d4ff;
+}
+
+QComboBox#evidenceSortCombo {
+    background-color: #141c2e;
+    color: #e8f4ff;
+    border: 1px solid #1e3a5f;
+    padding: 4px 8px;
+    font-size: 10px;
+}
+
+QCheckBox#chkSoundAlerts {
+    color: #7a9bb8;
+    font-size: 10px;
+    spacing: 6px;
+}
+
+QCheckBox#chkSoundAlerts::indicator {
+    width: 14px;
+    height: 14px;
+    border: 1px solid #1e3a5f;
+    background: #141c2e;
+    border-radius: 3px;
+}
+
+QCheckBox#chkSoundAlerts::indicator:checked {
+    background: #1a2840;
+    border-color: #00d4ff;
+}
+
+QLabel#systemOnline {
+    color: #00ff88;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+QLabel#systemActive {
+    color: #00d4ff;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+QLabel#alertCount {
+    color: #ffaa00;
+    font-size: 22px;
+    font-weight: bold;
 }
 

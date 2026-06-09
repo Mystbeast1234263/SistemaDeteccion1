@@ -13,17 +13,22 @@ from PyQt5.QtWidgets import (
     QMainWindow,
     QMessageBox,
     QSplitter,
+    QStackedWidget,
     QVBoxLayout,
     QWidget,
 )
 
 from ml.dataset_manager import DatasetManager
+from ml.evidence_catalog import EvidenceCatalog
 from ml.evidence_manager import EvidenceManager
+from ml.incident_history import IncidentHistory
 from ml.model_trainer import ModelTrainer
 from ml.predictor import BehaviorPredictor
 from ml.segment_tracker import SegmentTracker
 from ml.statistics import SessionStatistics
 from ui.control_bar import ControlBar
+from ui.evidence_panel import EvidencePanel
+from ui.nav_bar import NavBar
 from ui.sidebar_panel import SidebarPanel
 from ui.timeline_bar import TimelineBar
 from ui.video_panel import VideoPanel
@@ -38,10 +43,12 @@ from utils.constants import (
     DATASET_AUTO_INTERVAL,
     EVIDENCE_FRAME_INTERVAL,
     MODELS_DIR,
+    SOUND_ALERT_MIN_CONF,
     SUSPICIOUS_LOG_COOLDOWN_SEC,
     UI_UPDATE_INTERVAL,
     VIDEO_EXTENSIONS,
 )
+from utils.sound_alerts import SoundAlertManager
 from video.optical_flow import OpticalFlowAnalyzer
 from video.player import VideoPlayer
 from video.webcam import WebcamCapture
@@ -72,12 +79,16 @@ class MainWindow(QMainWindow):
         self.model_trainer = ModelTrainer()
         self.predictor = BehaviorPredictor(self.model_trainer)
         self.evidence_manager = EvidenceManager()
+        self.incident_history = IncidentHistory()
+        self.evidence_catalog = EvidenceCatalog(self.incident_history)
+        self.sound_alerts = SoundAlertManager()
         self.session_stats = SessionStatistics()
         self.segment_tracker = SegmentTracker()
 
         self._setup_window()
         self._build_ui()
         self._connect_signals()
+        self._auto_load_model()
         self._start_clock()
 
     def _setup_window(self) -> None:
@@ -96,12 +107,16 @@ class MainWindow(QMainWindow):
         root_layout.setSpacing(0)
 
         root_layout.addWidget(self._create_header())
+        self.nav_bar = NavBar()
+        root_layout.addWidget(self.nav_bar)
 
         splitter = QSplitter(Qt.Horizontal)
         splitter.setHandleWidth(2)
 
-        left_panel = QWidget()
-        left_layout = QVBoxLayout(left_panel)
+        self.section_stack = QStackedWidget()
+
+        monitor_page = QWidget()
+        left_layout = QVBoxLayout(monitor_page)
         left_layout.setContentsMargins(16, 12, 8, 16)
         left_layout.setSpacing(8)
 
@@ -113,9 +128,15 @@ class MainWindow(QMainWindow):
         left_layout.addWidget(self.timeline_bar)
         left_layout.addWidget(self.control_bar)
 
-        self.sidebar = SidebarPanel()
+        self.evidence_panel = EvidencePanel(self.evidence_catalog)
 
-        splitter.addWidget(left_panel)
+        self.section_stack.addWidget(monitor_page)
+        self.section_stack.addWidget(self.evidence_panel)
+
+        self.sidebar = SidebarPanel()
+        self.sidebar.set_system_status("EN LINEA", active=False)
+
+        splitter.addWidget(self.section_stack)
         splitter.addWidget(self.sidebar)
         splitter.setStretchFactor(0, 3)
         splitter.setStretchFactor(1, 1)
@@ -160,7 +181,10 @@ class MainWindow(QMainWindow):
         self.control_bar.btn_webcam.clicked.connect(self._on_toggle_webcam)
         self.control_bar.btn_start.clicked.connect(self._on_start_monitoring)
         self.control_bar.btn_stop.clicked.connect(self._on_stop_analysis)
-        self.control_bar.btn_history.clicked.connect(self._on_show_history)
+        self.control_bar.chk_sound.toggled.connect(self.sound_alerts.set_enabled)
+
+        self.nav_bar.section_changed.connect(self._on_section_changed)
+        self.evidence_panel.jump_to_video_time.connect(self._on_incident_jump_to_video)
 
         self.control_bar.btn_label_normal.clicked.connect(
             lambda: self._on_manual_label("normal")
@@ -231,6 +255,7 @@ class MainWindow(QMainWindow):
         self._update_control_state()
         self.sidebar.log_activity(f"Video importado: {filename}", "OK")
         self.sidebar.set_risk_level("BAJO")
+        self.sidebar.set_system_status("VIDEO CARGADO", active=False)
 
     def _read_first_frame(self, path: str):
         import cv2
@@ -310,6 +335,7 @@ class MainWindow(QMainWindow):
             "padding: 4px 12px; background-color: #141c2e; "
             "border: 1px solid #00d4ff; border-radius: 4px;"
         )
+        self.sidebar.set_system_status("ANALISIS ACTIVO", active=True)
         self.sidebar.set_movement_intensity(0)
         self.sidebar.log_activity("Flujo optico Farneback activado.", "OK")
         if self.predictor.is_ready:
@@ -325,6 +351,7 @@ class MainWindow(QMainWindow):
         self.motion_analyzer.reset()
         self.status_badge.setText("EN LINEA")
         self.status_badge.setStyleSheet("")
+        self.sidebar.set_system_status("EN LINEA", active=False)
         self.sidebar.log_activity("Analisis detenido por el operador.", "WARN")
         self.sidebar.set_movement_intensity(0)
         self.sidebar.set_risk_level("BAJO")
@@ -332,12 +359,50 @@ class MainWindow(QMainWindow):
             self.sidebar.set_prediction("SIN MODELO", 0)
         self._update_control_state()
 
-    def _on_show_history(self) -> None:
-        QMessageBox.information(
-            self, "Historial",
-            "Consulte el Registro de Actividades y la carpeta evidence/ para evidencias guardadas.",
+    def _auto_load_model(self) -> None:
+        ok, msg = self.model_trainer.load_latest()
+        if ok:
+            self.sidebar.log_activity(msg, "OK")
+            acc = self.model_trainer.metrics.get("accuracy", 0)
+            self.sidebar.set_prediction("MODELO LISTO", acc if acc else 100)
+        else:
+            self.sidebar.log_activity(
+                "Sin modelo cargado. Use Modelo > Entrenar o Cargar.", "INFO"
+            )
+
+    def _on_section_changed(self, index: int) -> None:
+        self.section_stack.setCurrentIndex(index)
+        if index == 1:
+            self.evidence_panel.refresh()
+        else:
+            self.evidence_panel.stop_all_media()
+
+    def _on_incident_jump_to_video(self, seconds: float) -> None:
+        if self._source_mode != "file" or not self._video_path:
+            return
+        self.nav_bar.select_monitor()
+        self.section_stack.setCurrentIndex(0)
+        self._on_timeline_seek(seconds)
+        self.sidebar.log_activity(
+            f"Salto a incidente en {self.timeline_bar._format_time(seconds)}", "INFO"
         )
-        self.sidebar.log_activity("Consulta de historial.", "INFO")
+
+    def _register_incident(
+        self,
+        event_type: str,
+        confidence: float = 0.0,
+        risk_level: str = "BAJO",
+        file_path: str = "",
+        file_type: str = "",
+    ) -> None:
+        self.incident_history.add_event(
+            event_type=event_type,
+            confidence=confidence,
+            risk_level=risk_level,
+            file_path=file_path,
+            file_type=file_type,
+            video_time_sec=self._current_time_sec(),
+        )
 
     def _on_frame_ready(self, frame) -> None:
         if frame is None or not getattr(frame, "size", 0):
@@ -407,7 +472,14 @@ class MainWindow(QMainWindow):
                         self.sidebar.log_activity(
                             f"Comportamiento sospechoso — Confianza: {pred.confidence}%", "WARN"
                         )
+                        self._register_incident(
+                            "Comportamiento sospechoso",
+                            confidence=pred.confidence,
+                            risk_level=result.nivel_riesgo,
+                        )
                         self._last_suspicious_log_time = now
+                    if pred.confidence >= SOUND_ALERT_MIN_CONF:
+                        self.sound_alerts.play_for_confidence(pred.confidence)
         else:
             self.sidebar.set_prediction("SIN MODELO", 0)
 
@@ -426,6 +498,13 @@ class MainWindow(QMainWindow):
             if path:
                 self.session_stats.add_capture()
                 self.sidebar.log_activity(f"Captura guardada: {os.path.basename(path)}", "OK")
+                self._register_incident(
+                    "Captura sospechosa",
+                    confidence=confidence,
+                    risk_level=result.nivel_riesgo,
+                    file_path=path,
+                    file_type="screenshot",
+                )
 
         fps = self.video_player.fps if self._source_mode == "file" else 30
         if self.evidence_manager.should_start_clip(confidence):
@@ -435,6 +514,13 @@ class MainWindow(QMainWindow):
         if clip_path:
             self.session_stats.add_clip()
             self.sidebar.log_activity(f"Clip guardado: {os.path.basename(clip_path)}", "OK")
+            self._register_incident(
+                "Clip sospechoso",
+                confidence=confidence,
+                risk_level=result.nivel_riesgo,
+                file_path=clip_path,
+                file_type="clip",
+            )
 
     def _update_motion_metrics(self, result) -> None:
         self.sidebar.set_movement_intensity(result.intensidad_movimiento)
@@ -472,6 +558,12 @@ class MainWindow(QMainWindow):
             self.sidebar.log_activity(log_msg, "WARN")
             self.session_stats.add_alert()
             self._last_alert_time = now
+            event_type = "Riesgo alto" if intensity >= ALERT_INTENSE_MIN else "Movimiento inusual"
+            self._register_incident(
+                event_type,
+                confidence=float(intensity),
+                risk_level=result.nivel_riesgo,
+            )
             if self.sidebar.alerts_list.count() > ALERT_MAX_ITEMS:
                 self.sidebar.alerts_list.takeItem(self.sidebar.alerts_list.count() - 1)
 
@@ -555,9 +647,11 @@ class MainWindow(QMainWindow):
         if success:
             QMessageBox.information(self, "Modelo", msg)
             self.sidebar.log_activity(msg, "OK")
-            self.sidebar.set_prediction("MODELO CARGADO", 100)
+            acc = self.model_trainer.metrics.get("accuracy", 100)
+            self.sidebar.set_prediction("MODELO CARGADO", acc)
         else:
             QMessageBox.warning(self, "Modelo", msg)
+            self.sidebar.log_activity(msg, "ERROR")
 
         if was_playing and self._monitoring_active:
             self.video_player.play()
@@ -572,8 +666,11 @@ class MainWindow(QMainWindow):
         if success:
             QMessageBox.information(self, "Modelo", msg)
             self.sidebar.log_activity(msg, "OK")
+            acc = self.model_trainer.metrics.get("accuracy", 100)
+            self.sidebar.set_prediction("MODELO CARGADO", acc)
         else:
             QMessageBox.warning(self, "Modelo", msg)
+            self.sidebar.log_activity(msg, "ERROR")
 
     def _on_export_model(self) -> None:
         path, _ = QFileDialog.getSaveFileName(
@@ -644,6 +741,7 @@ class MainWindow(QMainWindow):
         self.control_bar.set_labeling_available(can_label)
 
     def closeEvent(self, event) -> None:
+        self.evidence_panel.stop_all_media()
         self.video_player.stop()
         self.webcam.stop()
         self.motion_analyzer.reset()

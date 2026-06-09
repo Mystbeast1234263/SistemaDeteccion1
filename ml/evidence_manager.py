@@ -1,5 +1,6 @@
 """Captura automática de evidencia: screenshots y clips."""
 
+import time
 from collections import deque
 from datetime import datetime
 from pathlib import Path
@@ -11,7 +12,7 @@ from utils.constants import (
     CLIP_AFTER_SEC,
     CLIP_BEFORE_SEC,
     EVIDENCE_CLIPS_DIR,
-    EVIDENCE_DIR,
+    EVIDENCE_SCREENSHOTS_DIR,
     EVIDENCE_SCREENSHOT_CONF,
     EVIDENCE_CLIP_CONF,
 )
@@ -44,18 +45,17 @@ class FrameRingBuffer:
 
 
 class EvidenceManager:
-    """Guarda capturas PNG y clips MP4 en evidence/."""
+    """Guarda capturas PNG y clips MP4 en evidence/screenshots y evidence/clips."""
 
     def __init__(self):
-        self.evidence_dir = Path(EVIDENCE_DIR)
+        self.screenshots_dir = Path(EVIDENCE_SCREENSHOTS_DIR)
         self.clips_dir = Path(EVIDENCE_CLIPS_DIR)
-        self.evidence_dir.mkdir(parents=True, exist_ok=True)
+        self.screenshots_dir.mkdir(parents=True, exist_ok=True)
         self.clips_dir.mkdir(parents=True, exist_ok=True)
         self.frame_buffer = FrameRingBuffer()
         self._clip_collecting = False
         self._clip_frames: list = []
         self._clip_target = 0
-        self._clip_path: Path | None = None
         self._last_screenshot = 0.0
         self._screenshot_cooldown = 3.0
 
@@ -68,13 +68,12 @@ class EvidenceManager:
         if confidence < EVIDENCE_SCREENSHOT_CONF:
             return None
 
-        import time
         now = time.time()
         if now - self._last_screenshot < self._screenshot_cooldown:
             return None
 
         filename = datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".png"
-        path = self.evidence_dir / filename
+        path = self.screenshots_dir / filename
         cv2.imwrite(str(path), frame)
         self._last_screenshot = now
         return str(path)
