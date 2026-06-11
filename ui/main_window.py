@@ -38,12 +38,12 @@ from utils.constants import (
     ALERT_INTENSE_MIN,
     ALERT_MAX_ITEMS,
     ALERT_MOTION_MIN,
+    ANALYSIS_FRAME_INTERVAL,
     APP_NAME,
     APP_SHORT_NAME,
     DATASET_AUTO_INTERVAL,
     EVIDENCE_FRAME_INTERVAL,
     MODELS_DIR,
-    SOUND_ALERT_MIN_CONF,
     SUSPICIOUS_LOG_COOLDOWN_SEC,
     UI_UPDATE_INTERVAL,
     VIDEO_EXTENSIONS,
@@ -66,6 +66,7 @@ class MainWindow(QMainWindow):
         self._last_suspicious_log_time = 0.0
         self._last_risk_level = "BAJO"
         self._last_features = None
+        self._last_flow_result = None
         self._last_frame = None
         self._frame_counter = 0
         self._analysis_start = 0.0
@@ -321,6 +322,7 @@ class MainWindow(QMainWindow):
         self._last_alert_time = 0.0
         self._last_suspicious_log_time = 0.0
         self._last_risk_level = "BAJO"
+        self._last_flow_result = None
         self.motion_analyzer.reset()
         self.segment_tracker.reset()
         self.session_stats.reset()
@@ -348,6 +350,7 @@ class MainWindow(QMainWindow):
             self.webcam.stop()
 
         self._monitoring_active = False
+        self._last_flow_result = None
         self.motion_analyzer.reset()
         self.status_badge.setText("EN LINEA")
         self.status_badge.setStyleSheet("")
@@ -369,6 +372,16 @@ class MainWindow(QMainWindow):
             self.sidebar.log_activity(
                 "Sin modelo cargado. Use Modelo > Entrenar o Cargar.", "INFO"
             )
+        self._update_train_mode()
+
+    def _update_train_mode(self) -> None:
+        self.control_bar.set_train_mode(self.model_trainer.is_loaded)
+        if self.model_trainer.is_loaded:
+            pending = self.model_trainer.count_pending_samples(self.dataset_manager)
+            if pending:
+                self.sidebar.log_activity(
+                    f"{pending} muestra(s) nueva(s) lista(s) para ampliar el modelo.", "INFO"
+                )
 
     def _on_section_changed(self, index: int) -> None:
         self.section_stack.setCurrentIndex(index)
@@ -391,14 +404,12 @@ class MainWindow(QMainWindow):
         self,
         event_type: str,
         confidence: float = 0.0,
-        risk_level: str = "BAJO",
         file_path: str = "",
         file_type: str = "",
     ) -> None:
         self.incident_history.add_event(
             event_type=event_type,
             confidence=confidence,
-            risk_level=risk_level,
             file_path=file_path,
             file_type=file_type,
             video_time_sec=self._current_time_sec(),
@@ -416,8 +427,19 @@ class MainWindow(QMainWindow):
             if self._frame_counter % EVIDENCE_FRAME_INTERVAL == 0:
                 self.evidence_manager.push_frame(frame)
 
-            result = self.motion_analyzer.process(frame, draw_overlay=True)
-            display_frame = result.annotated_frame
+            run_analysis = self._frame_counter % ANALYSIS_FRAME_INTERVAL == 0
+            if run_analysis:
+                result = self.motion_analyzer.process(frame, draw_overlay=True)
+                self._last_flow_result = result
+                display_frame = result.annotated_frame
+            elif self._last_flow_result is not None:
+                result = self._last_flow_result
+                display_frame = frame
+            else:
+                result = self.motion_analyzer.process(frame, draw_overlay=True)
+                self._last_flow_result = result
+                display_frame = result.annotated_frame
+
             self._last_features = result
             self._frame_counter += 1
 
@@ -466,6 +488,7 @@ class MainWindow(QMainWindow):
                 self.sidebar.set_prediction(pred.label, pred.confidence)
 
                 if pred.is_suspicious:
+                    self.sound_alerts.play_if_suspicious(pred.confidence, True)
                     now = time.time()
                     if now - self._last_suspicious_log_time >= SUSPICIOUS_LOG_COOLDOWN_SEC:
                         self.session_stats.add_suspicious()
@@ -475,11 +498,8 @@ class MainWindow(QMainWindow):
                         self._register_incident(
                             "Comportamiento sospechoso",
                             confidence=pred.confidence,
-                            risk_level=result.nivel_riesgo,
                         )
                         self._last_suspicious_log_time = now
-                    if pred.confidence >= SOUND_ALERT_MIN_CONF:
-                        self.sound_alerts.play_for_confidence(pred.confidence)
         else:
             self.sidebar.set_prediction("SIN MODELO", 0)
 
@@ -501,7 +521,6 @@ class MainWindow(QMainWindow):
                 self._register_incident(
                     "Captura sospechosa",
                     confidence=confidence,
-                    risk_level=result.nivel_riesgo,
                     file_path=path,
                     file_type="screenshot",
                 )
@@ -517,7 +536,6 @@ class MainWindow(QMainWindow):
             self._register_incident(
                 "Clip sospechoso",
                 confidence=confidence,
-                risk_level=result.nivel_riesgo,
                 file_path=clip_path,
                 file_type="clip",
             )
@@ -562,7 +580,6 @@ class MainWindow(QMainWindow):
             self._register_incident(
                 event_type,
                 confidence=float(intensity),
-                risk_level=result.nivel_riesgo,
             )
             if self.sidebar.alerts_list.count() > ALERT_MAX_ITEMS:
                 self.sidebar.alerts_list.takeItem(self.sidebar.alerts_list.count() - 1)
@@ -592,18 +609,39 @@ class MainWindow(QMainWindow):
             f"Dataset: {counts['total']} muestras ({counts['normal']} normal, {counts['sospechoso']} sospechoso)",
             "INFO",
         )
+        if self.model_trainer.is_loaded:
+            pending = self.model_trainer.count_pending_samples(self.dataset_manager)
+            self.sidebar.log_activity(
+                f"Puede ampliar el modelo con esta muestra ({pending} nueva(s) pendiente(s)).",
+                "INFO",
+            )
 
     def _on_train_model(self) -> None:
+        continue_learning = self.model_trainer.is_loaded
+
         was_playing = self.video_player.is_playing
         self.video_player.pause()
 
-        ok, msg = self.model_trainer.train(self.dataset_manager)
+        ok, msg = self.model_trainer.train(
+            self.dataset_manager,
+            continue_from_loaded=continue_learning,
+        )
         if ok:
-            QMessageBox.information(self, "Entrenamiento", msg)
+            QMessageBox.information(
+                self,
+                "Ampliar modelo" if continue_learning else "Entrenamiento",
+                msg,
+            )
             self.sidebar.log_activity(msg, "OK")
-            self.sidebar.set_prediction("MODELO LISTO", 100)
+            acc = self.model_trainer.metrics.get("accuracy", 100)
+            self.sidebar.set_prediction("MODELO LISTO", acc)
+            self._update_train_mode()
         else:
-            QMessageBox.warning(self, "Entrenamiento", msg)
+            QMessageBox.warning(
+                self,
+                "Ampliar modelo" if continue_learning else "Entrenamiento",
+                msg,
+            )
             self.sidebar.log_activity(msg, "ERROR")
 
         if was_playing and self._monitoring_active:
@@ -626,6 +664,7 @@ class MainWindow(QMainWindow):
         if success:
             QMessageBox.information(self, "Modelo", msg)
             self.sidebar.log_activity(msg, "OK")
+            self._update_train_mode()
         else:
             QMessageBox.warning(self, "Modelo", msg)
 
@@ -649,6 +688,7 @@ class MainWindow(QMainWindow):
             self.sidebar.log_activity(msg, "OK")
             acc = self.model_trainer.metrics.get("accuracy", 100)
             self.sidebar.set_prediction("MODELO CARGADO", acc)
+            self._update_train_mode()
         else:
             QMessageBox.warning(self, "Modelo", msg)
             self.sidebar.log_activity(msg, "ERROR")
@@ -668,6 +708,7 @@ class MainWindow(QMainWindow):
             self.sidebar.log_activity(msg, "OK")
             acc = self.model_trainer.metrics.get("accuracy", 100)
             self.sidebar.set_prediction("MODELO CARGADO", acc)
+            self._update_train_mode()
         else:
             QMessageBox.warning(self, "Modelo", msg)
             self.sidebar.log_activity(msg, "ERROR")
@@ -707,6 +748,7 @@ class MainWindow(QMainWindow):
     def _on_playback_finished(self) -> None:
         self.sidebar.log_activity("Reproduccion de video finalizada.", "INFO")
         self._monitoring_active = False
+        self._last_flow_result = None
         self.motion_analyzer.reset()
         self.sidebar.set_movement_intensity(0)
         self.sidebar.set_risk_level("BAJO")
@@ -724,6 +766,7 @@ class MainWindow(QMainWindow):
         self._source_mode = None
         self._monitoring_active = False
         self._last_frame = None
+        self._last_flow_result = None
         self.motion_analyzer.reset()
         self.segment_tracker.reset()
         self.timeline_bar.reset()
@@ -744,5 +787,6 @@ class MainWindow(QMainWindow):
         self.evidence_panel.stop_all_media()
         self.video_player.stop()
         self.webcam.stop()
+        self._last_flow_result = None
         self.motion_analyzer.reset()
         event.accept()

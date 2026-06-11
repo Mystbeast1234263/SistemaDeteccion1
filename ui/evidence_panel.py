@@ -216,7 +216,7 @@ class EvidencePanel(QWidget):
         self.sort_combo.setObjectName("evidenceSortCombo")
         self.sort_combo.addItem("Fecha (reciente)", SORT_DATE_DESC)
         self.sort_combo.addItem("Fecha (antigua)", SORT_DATE_ASC)
-        self.sort_combo.addItem("Riesgo (alto primero)", SORT_RISK_DESC)
+        self.sort_combo.addItem("Sospechoso (alto primero)", SORT_RISK_DESC)
         self.sort_combo.addItem("Confianza (alta primero)", SORT_CONFIDENCE_DESC)
         self.sort_combo.currentIndexChanged.connect(self.refresh)
         toolbar.addWidget(self.sort_combo)
@@ -325,7 +325,7 @@ class EvidencePanel(QWidget):
             text = (
                 f"{item.date} {item.time}\n"
                 f"{item.event_type}\n"
-                f"Conf: {item.confidence:.0f}% | Riesgo: {item.risk_level}"
+                f"Conf: {item.confidence:.0f}% | Sospechoso: {item.suspicious_label}"
             )
             lw_item = QListWidgetItem(text)
             lw_item.setData(Qt.UserRole, str(item.path))
@@ -350,7 +350,7 @@ class EvidencePanel(QWidget):
         for inc in incidents:
             text = (
                 f"{inc.time_display} — {inc.event_type}\n"
-                f"Confianza: {inc.confidence:.0f}% | Riesgo: {inc.risk_level}"
+                f"Confianza: {inc.confidence:.0f}% | Sospechoso: {inc.suspicious_label}"
             )
             item = QListWidgetItem(text)
             item.setData(Qt.UserRole, inc)
@@ -394,7 +394,7 @@ class EvidencePanel(QWidget):
             f"<b>{inc.time_display} — {inc.event_type}</b><br>"
             f"Fecha: {inc.datetime}<br>"
             f"Confianza: {inc.confidence:.1f}%<br>"
-            f"Nivel de riesgo: {inc.risk_level}<br>"
+            f"Sospechoso: {inc.suspicious_label}<br>"
             f"Tipo: {inc.event_type}<br>"
         )
         if inc.file_path:

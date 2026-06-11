@@ -1,7 +1,7 @@
 """Reproductor de archivos de video con OpenCV."""
 
 import cv2
-from PyQt5.QtCore import QObject, QTimer, pyqtSignal
+from PyQt5.QtCore import QObject, Qt, QTimer, pyqtSignal
 
 from utils.constants import DEFAULT_FPS, VIDEO_BUFFER_SIZE
 
@@ -19,12 +19,14 @@ class VideoPlayer(QObject):
         self._capture = None
         self._path = ""
         self._timer = QTimer(self)
+        self._timer.setTimerType(Qt.PreciseTimer)
         self._timer.timeout.connect(self._read_next_frame)
         self._fps = DEFAULT_FPS
         self._playing = False
         self._total_frames = 0
         self._current_frame = 0
         self._duration = 0.0
+        self._last_tick = 0.0
 
     @property
     def is_playing(self) -> bool:
@@ -51,7 +53,9 @@ class VideoPlayer(QObject):
     def load(self, path: str) -> bool:
         """Carga un archivo de video. Retorna True si fue exitoso."""
         self.stop()
-        capture = cv2.VideoCapture(path)
+        capture = cv2.VideoCapture(path, cv2.CAP_FFMPEG)
+        if not capture.isOpened():
+            capture = cv2.VideoCapture(path)
         if not capture.isOpened():
             capture.release()
             self.error_occurred.emit(f"No se pudo abrir el video: {path}")
@@ -74,6 +78,8 @@ class VideoPlayer(QObject):
             self.error_occurred.emit("No hay video cargado.")
             return
 
+        import time
+        self._last_tick = time.perf_counter()
         interval_ms = max(1, int(1000 / self._fps))
         self._timer.setInterval(interval_ms)
         self._playing = True
@@ -121,13 +127,26 @@ class VideoPlayer(QObject):
         if self._capture is None:
             return
 
-        ret, frame = self._capture.read()
-        if not ret:
+        import time
+        now = time.perf_counter()
+        elapsed = now - self._last_tick
+        expected = 1.0 / self._fps if self._fps > 0 else 1.0 / 30
+        frames_to_advance = max(1, int(elapsed / expected)) if elapsed > expected * 1.5 else 1
+        self._last_tick = now
+
+        frame = None
+        ret = False
+        for _ in range(frames_to_advance):
+            ret, frame = self._capture.read()
+            if not ret:
+                break
+            self._current_frame += 1
+
+        if not ret or frame is None:
             self._timer.stop()
             self._playing = False
             self.playback_finished.emit()
             return
 
-        self._current_frame += 1
         self.position_changed.emit(self.current_time, self._duration)
         self.frame_ready.emit(frame)

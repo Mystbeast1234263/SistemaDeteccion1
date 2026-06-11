@@ -14,6 +14,7 @@ from utils.constants import (
     SORT_DATE_DESC,
     SORT_RISK_DESC,
 )
+from utils.suspicious_labels import format_suspicious_display, SUSPICIOUS_SORT_ORDER
 
 
 @dataclass
@@ -32,6 +33,10 @@ class EvidenceItem:
     @property
     def sort_datetime(self) -> str:
         return f"{self.date} {self.time}"
+
+    @property
+    def suspicious_label(self) -> str:
+        return format_suspicious_display(self.confidence, self.risk_level)
 
 
 class EvidenceCatalog:
@@ -138,10 +143,9 @@ class EvidenceCatalog:
         if sort_key == SORT_DATE_ASC:
             return sorted(items, key=lambda i: i.sort_datetime)
         if sort_key == SORT_RISK_DESC:
-            from utils.constants import RISK_SORT_ORDER
             return sorted(
                 items,
-                key=lambda i: (RISK_SORT_ORDER.get(i.risk_level, 0), i.confidence),
+                key=lambda i: (SUSPICIOUS_SORT_ORDER.get(i.suspicious_label, 0), i.confidence),
                 reverse=True,
             )
         if sort_key == SORT_CONFIDENCE_DESC:

@@ -119,3 +119,14 @@ class ControlBar(QWidget):
         if not available:
             self.btn_toggle_label.setChecked(False)
             self.label_panel.setVisible(False)
+
+    def set_train_mode(self, model_loaded: bool) -> None:
+        """Entrenar desde cero o ampliar conocimiento del modelo cargado."""
+        if model_loaded:
+            self.btn_train.setText("Ampliar")
+            self.btn_train.setToolTip(
+                "Combina el conocimiento del modelo cargado con nuevas muestras de dataset.csv"
+            )
+        else:
+            self.btn_train.setText("Entrenar")
+            self.btn_train.setToolTip("Entrena un modelo nuevo desde dataset.csv")

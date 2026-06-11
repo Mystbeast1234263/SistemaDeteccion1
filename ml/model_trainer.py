@@ -1,5 +1,6 @@
 """Entrenamiento, guardado y carga de RandomForestClassifier."""
 
+import copy
 import pickle
 import shutil
 from collections import Counter
@@ -25,6 +26,7 @@ class ModelTrainer:
         self.label_encoder.fit([LABEL_NORMAL, LABEL_SOSPECHOSO])
         self._model_path: Path | None = None
         self._metrics: dict = {}
+        self._training_rows: list[dict] = []
 
     @property
     def is_loaded(self) -> bool:
@@ -38,6 +40,59 @@ class ModelTrainer:
     def metrics(self) -> dict:
         return self._metrics
 
+    @property
+    def training_sample_count(self) -> int:
+        return len(self._training_rows)
+
+    @staticmethod
+    def _normalize_row(row: dict) -> dict:
+        risk = (row.get("nivel_riesgo") or "BAJO").upper()
+        etiqueta = (row.get("etiqueta") or "").strip().lower()
+        return {
+            "timestamp": row.get("timestamp", ""),
+            "intensidad_movimiento": float(row["intensidad_movimiento"]),
+            "magnitud_promedio": float(row["magnitud_promedio"]),
+            "direccion_promedio": float(row["direccion_promedio"]),
+            "cantidad_movimiento": float(row["cantidad_movimiento"]),
+            "nivel_riesgo": risk,
+            "etiqueta": etiqueta,
+        }
+
+    @staticmethod
+    def _row_signature(row: dict) -> tuple:
+        normalized = ModelTrainer._normalize_row(row)
+        return (
+            round(normalized["intensidad_movimiento"], 2),
+            round(normalized["magnitud_promedio"], 4),
+            round(normalized["direccion_promedio"], 2),
+            round(normalized["cantidad_movimiento"], 2),
+            normalized["nivel_riesgo"],
+            normalized["etiqueta"],
+        )
+
+    @classmethod
+    def _merge_training_rows(cls, base: list[dict], extra: list[dict]) -> tuple[list[dict], int]:
+        seen = {cls._row_signature(r) for r in base}
+        merged = [cls._normalize_row(r) for r in base]
+        added = 0
+        for row in extra:
+            sig = cls._row_signature(row)
+            if sig in seen:
+                continue
+            merged.append(cls._normalize_row(row))
+            seen.add(sig)
+            added += 1
+        return merged, added
+
+    def count_pending_samples(self, dataset: DatasetManager | None = None) -> int:
+        """Muestras en dataset.csv que aun no estan en el conocimiento del modelo cargado."""
+        dm = dataset or DatasetManager()
+        csv_rows = dm.load_labeled_rows()
+        if not self._training_rows:
+            return len(csv_rows)
+        _, added = self._merge_training_rows(self._training_rows, csv_rows)
+        return added
+
     @staticmethod
     def _features_from_row(row: dict) -> list[float]:
         risk = row.get("nivel_riesgo", "BAJO").upper()
@@ -49,57 +104,112 @@ class ModelTrainer:
             float(RISK_ENCODING.get(risk, 0)),
         ]
 
-    def train(self, dataset: DatasetManager | None = None) -> tuple[bool, str]:
+    def _fit_model(self, rows: list[dict]) -> tuple[bool, str, int, int]:
+        if len(rows) < 4:
+            return False, "Se necesitan al menos 4 muestras etiquetadas.", 0, 0
+
+        label_counts = Counter(r["etiqueta"] for r in rows)
+        if len(label_counts) < 2:
+            return False, "El dataset debe incluir ejemplos 'normal' y 'sospechoso'.", 0, 0
+
+        min_class = min(label_counts.values())
+        if min_class < 2:
+            return (
+                False,
+                f"Cada clase necesita al menos 2 muestras. "
+                f"Actual: normal={label_counts.get(LABEL_NORMAL, 0)}, "
+                f"sospechoso={label_counts.get(LABEL_SOSPECHOSO, 0)}.",
+                0,
+                0,
+            )
+
+        labels = [r["etiqueta"] for r in rows]
+        X = np.array([self._features_from_row(r) for r in rows])
+        y = self.label_encoder.transform(labels)
+
+        can_stratify = len(rows) >= 10 and min_class >= 2
+        if can_stratify:
+            X_train, X_test, y_train, y_test = train_test_split(
+                X, y, test_size=0.2, random_state=42, stratify=y
+            )
+        else:
+            X_train, y_train = X, y
+            X_test, y_test = X, y
+
+        self.model = RandomForestClassifier(
+            n_estimators=50,
+            max_depth=8,
+            random_state=42,
+            n_jobs=-1,
+        )
+        self.model.fit(X_train, y_train)
+        accuracy = float(self.model.score(X_test, y_test))
+        self._training_rows = copy.deepcopy(rows)
+        self._metrics = {
+            "accuracy": round(accuracy * 100, 2),
+            "samples": len(rows),
+            "features": ["intensidad", "magnitud", "direccion", "cantidad", "riesgo_enc"],
+        }
+        return True, "", len(rows), round(accuracy * 100, 2)
+
+    def train(
+        self,
+        dataset: DatasetManager | None = None,
+        *,
+        continue_from_loaded: bool = False,
+    ) -> tuple[bool, str]:
         try:
             dm = dataset or DatasetManager()
-            rows = dm.load_labeled_rows()
+            csv_rows = dm.load_labeled_rows()
+            prev_count = len(self._training_rows)
+            new_count = 0
 
-            if len(rows) < 4:
-                return False, "Se necesitan al menos 4 muestras etiquetadas en dataset.csv."
+            if continue_from_loaded and self.is_loaded:
+                if self._training_rows:
+                    rows, new_count = self._merge_training_rows(self._training_rows, csv_rows)
+                    if new_count == 0:
+                        return (
+                            False,
+                            "No hay muestras nuevas en dataset.csv. "
+                            "Etiquete frames (Normal/Sospechoso) o deje correr el monitoreo "
+                            "para registrar datos automaticos, luego pulse Ampliar.",
+                        )
+                else:
+                    rows = [self._normalize_row(r) for r in csv_rows]
+                    new_count = len(rows)
+                    if not rows:
+                        return False, "No hay muestras en dataset.csv para ampliar el modelo."
+            else:
+                rows = [self._normalize_row(r) for r in csv_rows]
+                new_count = len(rows)
+                if not rows:
+                    return False, "Se necesitan al menos 4 muestras etiquetadas en dataset.csv."
 
-            label_counts = Counter(r["etiqueta"] for r in rows)
-            if len(label_counts) < 2:
-                return False, "El dataset debe incluir ejemplos 'normal' y 'sospechoso'."
+            ok, err, total, accuracy = self._fit_model(rows)
+            if not ok:
+                return False, err
 
-            min_class = min(label_counts.values())
-            if min_class < 2:
-                return (
-                    False,
-                    f"Cada clase necesita al menos 2 muestras. "
-                    f"Actual: normal={label_counts.get(LABEL_NORMAL, 0)}, "
-                    f"sospechoso={label_counts.get(LABEL_SOSPECHOSO, 0)}.",
+            self._metrics["trained_from"] = (
+                "modelo + dataset.csv" if continue_from_loaded and self.is_loaded else "dataset.csv"
+            )
+            if continue_from_loaded and self.is_loaded and prev_count:
+                self._metrics["previous_samples"] = prev_count
+                self._metrics["new_samples"] = new_count
+                msg = (
+                    f"Conocimiento ampliado: +{new_count} muestras nuevas "
+                    f"(total {total}). Precision: {accuracy}%."
                 )
-
-            labels = [r["etiqueta"] for r in rows]
-            X = np.array([self._features_from_row(r) for r in rows])
-            y = self.label_encoder.transform(labels)
-
-            can_stratify = len(rows) >= 10 and min_class >= 2
-            if can_stratify:
-                X_train, X_test, y_train, y_test = train_test_split(
-                    X, y, test_size=0.2, random_state=42, stratify=y
+            elif continue_from_loaded and self.is_loaded:
+                msg = (
+                    f"Modelo actualizado con {total} muestras de dataset.csv. "
+                    f"Precision: {accuracy}%. Guarde el modelo para conservar el conocimiento."
                 )
             else:
-                X_train, y_train = X, y
-                X_test, y_test = X, y
-
-            self.model = RandomForestClassifier(
-                n_estimators=50,
-                max_depth=8,
-                random_state=42,
-                n_jobs=-1,
-            )
-            self.model.fit(X_train, y_train)
-            accuracy = float(self.model.score(X_test, y_test))
-            self._metrics = {
-                "accuracy": round(accuracy * 100, 2),
-                "samples": len(rows),
-                "features": ["intensidad", "magnitud", "direccion", "cantidad", "riesgo_enc"],
-            }
-            return True, (
-                f"Modelo entrenado. Precision: {self._metrics['accuracy']}% "
-                f"({len(rows)} muestras)"
-            )
+                msg = (
+                    f"Modelo entrenado con {total} muestras desde dataset.csv. "
+                    f"Precision: {accuracy}%. Use Guardar para persistirlo."
+                )
+            return True, msg
         except Exception as exc:
             return False, f"Error al entrenar: {exc}"
 
@@ -113,6 +223,7 @@ class ModelTrainer:
                 "model": self.model,
                 "label_encoder": self.label_encoder,
                 "metrics": self._metrics,
+                "training_rows": self._training_rows,
             }
             with open(path, "wb") as f:
                 pickle.dump(payload, f)
@@ -149,8 +260,13 @@ class ModelTrainer:
                 self.label_encoder.fit([LABEL_NORMAL, LABEL_SOSPECHOSO])
 
             self._metrics = payload.get("metrics", {})
+            self._training_rows = [
+                self._normalize_row(r) for r in payload.get("training_rows", [])
+            ]
             self._model_path = path.resolve()
-            return True, f"Modelo cargado: {path.name}"
+            samples = len(self._training_rows)
+            detail = f" ({samples} muestras de conocimiento)" if samples else ""
+            return True, f"Modelo cargado: {path.name}{detail}"
         except MemoryError:
             return False, (
                 "El archivo del modelo esta corrupto. Entrene de nuevo y guarde un modelo nuevo."

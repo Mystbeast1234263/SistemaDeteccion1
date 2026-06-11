@@ -6,13 +6,11 @@ from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
 
-from utils.constants import (
-    INCIDENTS_PATH,
-    RISK_SORT_ORDER,
-    SORT_CONFIDENCE_DESC,
-    SORT_DATE_ASC,
-    SORT_DATE_DESC,
-    SORT_RISK_DESC,
+from utils.constants import INCIDENTS_PATH, SORT_CONFIDENCE_DESC, SORT_DATE_ASC, SORT_DATE_DESC, SORT_RISK_DESC
+from utils.suspicious_labels import (
+    SUSPICIOUS_SORT_ORDER,
+    format_suspicious_display,
+    suspicious_label_from_confidence,
 )
 
 
@@ -25,7 +23,7 @@ class IncidentRecord:
     time_display: str
     event_type: str
     confidence: float
-    risk_level: str
+    risk_level: str  # Etiqueta de sospecha: NORMAL, SOSPECHOSO, SOSPECHOSO ALTO
     file_path: str = ""
     file_type: str = ""
     video_time_sec: float = 0.0
@@ -35,19 +33,20 @@ class IncidentRecord:
         cls,
         event_type: str,
         confidence: float = 0.0,
-        risk_level: str = "BAJO",
+        risk_level: str = "BAJO",  # ignorado; se calcula desde confianza
         file_path: str = "",
         file_type: str = "",
         video_time_sec: float = 0.0,
     ) -> "IncidentRecord":
         now = datetime.now()
+        suspicious = suspicious_label_from_confidence(confidence)
         return cls(
             id=str(uuid.uuid4())[:8],
             datetime=now.strftime("%Y-%m-%d %H:%M:%S"),
             time_display=now.strftime("%H:%M"),
             event_type=event_type,
             confidence=round(confidence, 1),
-            risk_level=risk_level.upper(),
+            risk_level=suspicious,
             file_path=file_path,
             file_type=file_type,
             video_time_sec=round(video_time_sec, 1),
@@ -66,6 +65,10 @@ class IncidentRecord:
             file_type=data.get("file_type", ""),
             video_time_sec=float(data.get("video_time_sec", 0)),
         )
+
+    @property
+    def suspicious_label(self) -> str:
+        return format_suspicious_display(self.confidence, self.risk_level)
 
 
 class IncidentHistory:
@@ -102,7 +105,6 @@ class IncidentHistory:
         self,
         event_type: str,
         confidence: float = 0.0,
-        risk_level: str = "BAJO",
         file_path: str = "",
         file_type: str = "",
         video_time_sec: float = 0.0,
@@ -110,7 +112,6 @@ class IncidentHistory:
         record = IncidentRecord.create(
             event_type=event_type,
             confidence=confidence,
-            risk_level=risk_level,
             file_path=file_path,
             file_type=file_type,
             video_time_sec=video_time_sec,
@@ -128,7 +129,7 @@ class IncidentHistory:
         if sort_key == SORT_RISK_DESC:
             return sorted(
                 items,
-                key=lambda r: (RISK_SORT_ORDER.get(r.risk_level, 0), r.confidence),
+                key=lambda r: (SUSPICIOUS_SORT_ORDER.get(r.suspicious_label, 0), r.confidence),
                 reverse=True,
             )
         if sort_key == SORT_CONFIDENCE_DESC:

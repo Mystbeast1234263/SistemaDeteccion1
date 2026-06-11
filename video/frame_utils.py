@@ -29,11 +29,14 @@ def frame_to_pixmap(
     rgb = np.ascontiguousarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
     bytes_per_line = 3 * w
     q_image = QImage(rgb.data, w, h, bytes_per_line, QImage.Format_RGB888)
+    pixmap = QPixmap.fromImage(q_image)
 
-    transform = Qt.FastTransformation if fast else Qt.SmoothTransformation
-    return QPixmap.fromImage(q_image).scaled(
-        target_width,
-        target_height,
-        Qt.KeepAspectRatio,
-        transform,
-    )
+    if w != target_width or h != target_height:
+        transform = Qt.FastTransformation if fast else Qt.SmoothTransformation
+        pixmap = pixmap.scaled(
+            target_width,
+            target_height,
+            Qt.KeepAspectRatio,
+            transform,
+        )
+    return pixmap
