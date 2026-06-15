@@ -9,7 +9,6 @@ import numpy as np
 
 from utils.constants import (
     DOCS_DIR,
-    SPRINT5_OPTIM_DOC,
     SPRINT5_TESTING_DOC,
     TEST_RESULTS_PATH,
     TESTING_DIR,
@@ -246,77 +245,61 @@ class TestRunner:
         model_metrics: dict,
         session_stats: dict,
     ) -> Path:
-        lines = [
-            "# Sprint 5 — Optimizaciones SIDACS",
-            "",
-            f"Generado: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-            "",
-            "## Problemas detectados",
-            "",
-            "- Falsos positivos por movimientos breves (cabeza, acomodarse en silla).",
-            "- Videos 1080p/2K consumian demasiado CPU al analizar cada frame en resolucion completa.",
-            "- Metricas ML limitadas a accuracy; faltaba precision, recall y F1.",
-            "- Sin modulo formal de pruebas ni panel de metricas avanzadas.",
-            "",
-            "## Optimizaciones realizadas",
-            "",
-            "### Reduccion de falsos positivos",
-            "- Filtro de comportamiento con persistencia minima antes de alertar.",
-            "- Umbrales de movimiento ajustados (18/28/58).",
-            "- Confirmacion de sospecha ML en varios ciclos consecutivos.",
-            "",
-            "### Fluidez de video y webcam (optimizacion principal)",
-            "- Separacion visualizacion vs analisis: frame original en pantalla, flujo optico sin overlay.",
-            "- Cap de display 1280x720 (OpenCV INTER_AREA + Qt FastTransformation).",
-            "- Analisis cada 4/6/8 frames segun resolucion; reutilizacion de resultados.",
-            "- Webcam 720p, buffer=1, descarte de frames viejos (grab/retrieve).",
-            "- Reproductor con QTimer CoarseTimer y throttling visual a 30 FPS.",
-            "- Herramientas: OpenCV, PyQt5, NumPy, psutil.",
-            "",
-            "### Video de alta resolucion",
-            "- Analisis en resolucion reducida (480p-640p); visualizacion en frame original.",
-            "",
-            "### Estadisticas en porcentajes",
-            "- Panel Metricas y sidebar con valores en % (riesgo, sospechosos, FPS, modelo).",
-            "",
-            "## Metricas del modelo",
-            "",
-            f"- Accuracy: {model_metrics.get('accuracy', 0)}%",
-            f"- Precision: {model_metrics.get('precision', 0)}%",
-            f"- Recall: {model_metrics.get('recall', 0)}%",
-            f"- F1 Score: {model_metrics.get('f1_score', 0)}%",
-            f"- Muestras entrenamiento: {model_metrics.get('samples', 0)}",
-            "",
-            "## Rendimiento medido (ultima sesion)",
-            "",
-            f"- Eficiencia FPS: {session_stats.get('activity', {}).get('fps_efficiency_pct', 0)}%",
-            f"- Carga por frame: {performance.get('frame_budget_pct', 0)}%",
-            f"- CPU promedio: {performance.get('avg_cpu', 0)}%",
-            "",
-            "## Pruebas ejecutadas",
-            "",
-        ]
+        """Genera reporte de sesion en HTML (no sobrescribe el doc principal)."""
+        path = DOCS_DIR / "sprint5_sesion.html"
+        DOCS_DIR.mkdir(parents=True, exist_ok=True)
+        ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        act = session_stats.get("activity", {})
+        tests_html = ""
         if self._results:
             for r in self._results[-10:]:
                 status = "OK" if r.get("passed") else "REVISAR"
-                lines.append(
-                    f"- [{status}] {r.get('case_name', r.get('case_id'))} — {r.get('recorded_at', '—')}"
-                )
+                tests_html += f"<li>[{status}] {r.get('case_name', r.get('case_id'))} — {r.get('recorded_at', '—')}</li>\n"
         else:
-            lines.append("- Ejecute pruebas desde la pestana **Pruebas** del sistema.")
+            tests_html = "<li>Sin pruebas registradas aún.</li>"
 
-        lines.extend([
-            "",
-            "## Resultados esperados del sprint",
-            "",
-            "- Sistema mas estable y fluido en videos pesados.",
-            "- Menos alertas innecesarias por movimiento normal.",
-            "- Metricas ML visibles para la presentacion.",
-            "- Compatibilidad total con Sprint 1–4 (webcam, videos, evidencias, ML).",
-            "",
-        ])
-        SPRINT5_OPTIM_DOC.write_text("\n".join(lines), encoding="utf-8")
-        return SPRINT5_OPTIM_DOC
+        html = f"""<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>SIDACS — Métricas de sesión Sprint 5</title>
+<style>
+body {{ font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; }}
+h1 {{ color: #1e3a5f; border-bottom: 2px solid #1e3a5f; padding-bottom: 8px; }}
+table {{ width: 100%; border-collapse: collapse; margin: 16px 0; }}
+th, td {{ border: 1px solid #b0c4de; padding: 8px; text-align: left; }}
+th {{ background: #e8f0fa; }}
+.meta {{ color: #4a6278; font-size: 10pt; }}
+a {{ color: #1e3a5f; }}
+</style>
+</head>
+<body>
+<h1>Métricas de sesión — Sprint 5</h1>
+<p class="meta">Generado: {ts}<br>
+Documento principal (antes vs. ahora): <a href="sprint5_optimizaciones.html">sprint5_optimizaciones.html</a></p>
+<h2>Modelo ML</h2>
+<table>
+<tr><th>Métrica</th><th>Valor</th></tr>
+<tr><td>Accuracy</td><td>{model_metrics.get('accuracy', 0)}%</td></tr>
+<tr><td>Precision</td><td>{model_metrics.get('precision', 0)}%</td></tr>
+<tr><td>Recall</td><td>{model_metrics.get('recall', 0)}%</td></tr>
+<tr><td>F1 Score</td><td>{model_metrics.get('f1_score', 0)}%</td></tr>
+<tr><td>Muestras</td><td>{model_metrics.get('samples', 0)}</td></tr>
+</table>
+<h2>Rendimiento (última sesión)</h2>
+<table>
+<tr><th>Métrica</th><th>Valor</th></tr>
+<tr><td>Eficiencia FPS</td><td>{act.get('fps_efficiency_pct', 0)}%</td></tr>
+<tr><td>Carga por frame</td><td>{performance.get('frame_budget_pct', 0)}%</td></tr>
+<tr><td>CPU promedio</td><td>{performance.get('avg_cpu', 0)}%</td></tr>
+<tr><td>RAM (MB)</td><td>{performance.get('avg_ram_mb', 0)}</td></tr>
+</table>
+<h2>Pruebas recientes</h2>
+<ul>{tests_html}</ul>
+</body>
+</html>"""
+        path.write_text(html, encoding="utf-8")
+        return path
 
     @staticmethod
     def simulate_motion_frame(width: int = 640, height: int = 480, shift: int = 0) -> np.ndarray:

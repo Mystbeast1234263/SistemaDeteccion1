@@ -127,7 +127,7 @@ TESTING_DIR = ROOT_DIR / "testing"
 TEST_RESULTS_PATH = TESTING_DIR / "test_results.json"
 DOCS_DIR = ROOT_DIR / "docs"
 SPRINT5_TESTING_DOC = DOCS_DIR / "sprint5_testing.md"
-SPRINT5_OPTIM_DOC = DOCS_DIR / "sprint5_optimizaciones.md"
+SPRINT5_OPTIM_DOC = DOCS_DIR / "sprint5_optimizaciones.html"
 
 # Sprint 4 — Alertas sonoras (alineado con sospechoso > 40%)
 SOUND_ALERT_STRONG_CONF = 85.0

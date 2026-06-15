@@ -408,12 +408,7 @@ class MainWindow(QMainWindow):
     def _ensure_sprint5_docs(self) -> None:
         if not SPRINT5_TESTING_DOC.exists():
             self.test_runner.generate_testing_report()
-        if not SPRINT5_OPTIM_DOC.exists():
-            self.test_runner.generate_optimization_report(
-                self.performance_monitor.as_dict(),
-                self.model_trainer.metrics_summary(),
-                self.session_stats.as_advanced_dict(),
-            )
+        # sprint5_optimizaciones.html es el documento principal (incluido en docs/)
 
     def _auto_load_model(self) -> None:
         ok, msg = self.model_trainer.load_latest()
@@ -941,11 +936,15 @@ class MainWindow(QMainWindow):
             self.session_stats.as_advanced_dict(),
         )
         self.test_panel.append_log(f"Reporte testing: {testing_path}")
-        self.test_panel.append_log(f"Reporte optimizacion: {optim_path}")
+        self.test_panel.append_log(f"Metricas sesion: {optim_path}")
+        main_doc = SPRINT5_OPTIM_DOC
         QMessageBox.information(
             self,
             "Reportes generados",
-            f"Documentacion creada en:\n\n{testing_path}\n{optim_path}",
+            f"Documentacion:\n\n"
+            f"Optimizaciones (antes/ahora):\n{main_doc}\n\n"
+            f"Metricas de esta sesion:\n{optim_path}\n\n"
+            f"Testing:\n{testing_path}",
         )
 
     def _update_control_state(self) -> None:
