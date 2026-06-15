@@ -18,6 +18,7 @@ from PyQt5.QtWidgets import (
     QWidget,
 )
 
+from ml.behavior_filter import BehaviorFilter
 from ml.dataset_manager import DatasetManager
 from ml.evidence_catalog import EvidenceCatalog
 from ml.evidence_manager import EvidenceManager
@@ -26,10 +27,13 @@ from ml.model_trainer import ModelTrainer
 from ml.predictor import BehaviorPredictor
 from ml.segment_tracker import SegmentTracker
 from ml.statistics import SessionStatistics
+from ml.test_runner import TestRunner
 from ui.control_bar import ControlBar
 from ui.evidence_panel import EvidencePanel
+from ui.metrics_panel import MetricsPanel
 from ui.nav_bar import NavBar
 from ui.sidebar_panel import SidebarPanel
+from ui.test_panel import TestPanel
 from ui.timeline_bar import TimelineBar
 from ui.video_panel import VideoPanel
 from utils.constants import (
@@ -39,15 +43,22 @@ from utils.constants import (
     ALERT_MAX_ITEMS,
     ALERT_MOTION_MIN,
     ANALYSIS_FRAME_INTERVAL,
+    ANALYSIS_FRAME_INTERVAL_2K,
+    ANALYSIS_FRAME_INTERVAL_HD,
     APP_NAME,
     APP_SHORT_NAME,
     DATASET_AUTO_INTERVAL,
     EVIDENCE_FRAME_INTERVAL,
+    HR_VIDEO_HEIGHT_THRESHOLD,
     MODELS_DIR,
+    SPRINT5_OPTIM_DOC,
+    SPRINT5_TESTING_DOC,
     SUSPICIOUS_LOG_COOLDOWN_SEC,
     UI_UPDATE_INTERVAL,
+    UHD_VIDEO_HEIGHT_THRESHOLD,
     VIDEO_EXTENSIONS,
 )
+from utils.performance_monitor import PerformanceMonitor
 from utils.sound_alerts import SoundAlertManager
 from video.optical_flow import OpticalFlowAnalyzer
 from video.player import VideoPlayer
@@ -67,8 +78,12 @@ class MainWindow(QMainWindow):
         self._last_risk_level = "BAJO"
         self._last_features = None
         self._last_flow_result = None
+        self._last_overlay_frame = None
         self._last_frame = None
         self._frame_counter = 0
+        self._analysis_interval = ANALYSIS_FRAME_INTERVAL
+        self._display_counter = 0
+        self._metrics_tab_active = False
         self._analysis_start = 0.0
         self._webcam_elapsed = 0.0
 
@@ -85,6 +100,10 @@ class MainWindow(QMainWindow):
         self.sound_alerts = SoundAlertManager()
         self.session_stats = SessionStatistics()
         self.segment_tracker = SegmentTracker()
+        self.behavior_filter = BehaviorFilter()
+        self.performance_monitor = PerformanceMonitor()
+        self.test_runner = TestRunner()
+        self._ensure_sprint5_docs()
 
         self._setup_window()
         self._build_ui()
@@ -130,9 +149,13 @@ class MainWindow(QMainWindow):
         left_layout.addWidget(self.control_bar)
 
         self.evidence_panel = EvidencePanel(self.evidence_catalog)
+        self.test_panel = TestPanel()
+        self.metrics_panel = MetricsPanel()
 
         self.section_stack.addWidget(monitor_page)
         self.section_stack.addWidget(self.evidence_panel)
+        self.section_stack.addWidget(self.test_panel)
+        self.section_stack.addWidget(self.metrics_panel)
 
         self.sidebar = SidebarPanel()
         self.sidebar.set_system_status("EN LINEA", active=False)
@@ -183,9 +206,19 @@ class MainWindow(QMainWindow):
         self.control_bar.btn_start.clicked.connect(self._on_start_monitoring)
         self.control_bar.btn_stop.clicked.connect(self._on_stop_analysis)
         self.control_bar.chk_sound.toggled.connect(self.sound_alerts.set_enabled)
+        self.control_bar.chk_analysis_overlay.toggled.connect(self._on_overlay_toggled)
 
         self.nav_bar.section_changed.connect(self._on_section_changed)
         self.evidence_panel.jump_to_video_time.connect(self._on_incident_jump_to_video)
+
+        self.test_panel.run_automated.connect(self._on_run_automated_test)
+        self.test_panel.record_session.connect(self._on_record_session_test)
+        self.test_panel.generate_reports.connect(self._on_generate_reports)
+        self.test_panel.set_cases(self.test_runner.list_cases())
+
+        self._metrics_timer = QTimer(self)
+        self._metrics_timer.setInterval(2000)
+        self._metrics_timer.timeout.connect(self._refresh_metrics_panel)
 
         self.control_bar.btn_label_normal.clicked.connect(
             lambda: self._on_manual_label("normal")
@@ -323,9 +356,14 @@ class MainWindow(QMainWindow):
         self._last_suspicious_log_time = 0.0
         self._last_risk_level = "BAJO"
         self._last_flow_result = None
+        self._last_overlay_frame = None
         self.motion_analyzer.reset()
+        self.behavior_filter.reset()
+        self.performance_monitor.reset()
         self.segment_tracker.reset()
         self.session_stats.reset()
+        self.session_stats.begin_session()
+        self.control_bar.chk_analysis_overlay.setEnabled(True)
         self.evidence_manager.frame_buffer.clear()
         self.sidebar.clear_alerts()
         self.sidebar.set_prediction("ANALIZANDO...", 0)
@@ -351,7 +389,11 @@ class MainWindow(QMainWindow):
 
         self._monitoring_active = False
         self._last_flow_result = None
+        self._last_overlay_frame = None
         self.motion_analyzer.reset()
+        self.behavior_filter.reset()
+        self.control_bar.chk_analysis_overlay.setEnabled(False)
+        self.control_bar.chk_analysis_overlay.setChecked(False)
         self.status_badge.setText("EN LINEA")
         self.status_badge.setStyleSheet("")
         self.sidebar.set_system_status("EN LINEA", active=False)
@@ -361,6 +403,16 @@ class MainWindow(QMainWindow):
         if not self.predictor.is_ready:
             self.sidebar.set_prediction("SIN MODELO", 0)
         self._update_control_state()
+
+    def _ensure_sprint5_docs(self) -> None:
+        if not SPRINT5_TESTING_DOC.exists():
+            self.test_runner.generate_testing_report()
+        if not SPRINT5_OPTIM_DOC.exists():
+            self.test_runner.generate_optimization_report(
+                self.performance_monitor.as_dict(),
+                self.model_trainer.metrics_summary(),
+                self.session_stats.as_advanced_dict(),
+            )
 
     def _auto_load_model(self) -> None:
         ok, msg = self.model_trainer.load_latest()
@@ -385,10 +437,23 @@ class MainWindow(QMainWindow):
 
     def _on_section_changed(self, index: int) -> None:
         self.section_stack.setCurrentIndex(index)
-        if index == 1:
+        if index == NavBar.SECTION_EVIDENCE:
             self.evidence_panel.refresh()
+            self._metrics_timer.stop()
+        elif index == NavBar.SECTION_METRICS:
+            self.evidence_panel.stop_all_media()
+            self._metrics_tab_active = True
+            self._refresh_metrics_panel()
+            self._metrics_timer.start()
+        elif index == NavBar.SECTION_TESTS:
+            self.evidence_panel.stop_all_media()
+            self._metrics_tab_active = False
+            self.test_panel.set_cases(self.test_runner.list_cases())
+            self._metrics_timer.stop()
         else:
             self.evidence_panel.stop_all_media()
+            self._metrics_tab_active = False
+            self._metrics_timer.stop()
 
     def _on_incident_jump_to_video(self, seconds: float) -> None:
         if self._source_mode != "file" or not self._video_path:
@@ -415,37 +480,73 @@ class MainWindow(QMainWindow):
             video_time_sec=self._current_time_sec(),
         )
 
+    def _on_overlay_toggled(self, enabled: bool) -> None:
+        self._last_overlay_frame = None
+        if enabled:
+            self.sidebar.log_activity(
+                "Overlay de analisis activado (vectores + HUD en video).", "INFO"
+            )
+        else:
+            self.sidebar.log_activity(
+                "Overlay desactivado — modo fluido.", "OK"
+            )
+
+    def _analysis_interval_for(self, frame) -> int:
+        h = frame.shape[0]
+        if h >= UHD_VIDEO_HEIGHT_THRESHOLD:
+            return ANALYSIS_FRAME_INTERVAL_2K
+        if h >= HR_VIDEO_HEIGHT_THRESHOLD:
+            return ANALYSIS_FRAME_INTERVAL_HD
+        return ANALYSIS_FRAME_INTERVAL
+
     def _on_frame_ready(self, frame) -> None:
         if frame is None or not getattr(frame, "size", 0):
             return
 
+        track_perf = self._metrics_tab_active or self._display_counter % 10 == 0
+        self._display_counter += 1
+        if track_perf:
+            self.performance_monitor.mark_frame_start()
+
         needs_control_update = self._last_frame is None
         self._last_frame = frame
+        result = self._last_flow_result
         display_frame = frame
+        show_overlay = (
+            self._monitoring_active
+            and self.control_bar.chk_analysis_overlay.isChecked()
+        )
 
         if self._monitoring_active:
+            fps = self.video_player.fps if self._source_mode == "file" else 30.0
+            self._analysis_interval = self._analysis_interval_for(frame)
+
             if self._frame_counter % EVIDENCE_FRAME_INTERVAL == 0:
                 self.evidence_manager.push_frame(frame)
 
-            run_analysis = self._frame_counter % ANALYSIS_FRAME_INTERVAL == 0
-            if run_analysis:
-                result = self.motion_analyzer.process(frame, draw_overlay=True)
+            run_analysis = self._frame_counter % self._analysis_interval == 0
+            if run_analysis or result is None:
+                result = self.motion_analyzer.process(
+                    frame,
+                    draw_overlay=show_overlay and run_analysis,
+                )
                 self._last_flow_result = result
-                display_frame = result.annotated_frame
-            elif self._last_flow_result is not None:
-                result = self._last_flow_result
-                display_frame = frame
-            else:
-                result = self.motion_analyzer.process(frame, draw_overlay=True)
-                self._last_flow_result = result
-                display_frame = result.annotated_frame
+                if show_overlay and run_analysis:
+                    self._last_overlay_frame = result.annotated_frame
 
             self._last_features = result
             self._frame_counter += 1
+            self.session_stats.add_frame(fps)
 
-            interval = 1.0 / max(self.video_player.fps if self._source_mode == "file" else 30, 1)
+            interval = 1.0 / max(fps, 1)
             self.session_stats.add_time(interval)
             self.session_stats.add_risk_sample(result.intensidad_movimiento)
+            self.session_stats.add_motion_sample(
+                result.intensidad_movimiento,
+                result.magnitud_promedio,
+                result.direccion_promedio,
+                result.nivel_riesgo,
+            )
 
             if self._frame_counter % DATASET_AUTO_INTERVAL == 0:
                 self.dataset_manager.append_auto(result)
@@ -453,8 +554,11 @@ class MainWindow(QMainWindow):
             update_ui = self._frame_counter % UI_UPDATE_INTERVAL == 0
             if update_ui:
                 self._update_motion_metrics(result)
-                self._update_ml_analysis(result, display_frame)
+                self._update_ml_analysis(result, frame)
                 self.sidebar.update_statistics(self.session_stats.as_dict())
+
+            if show_overlay and self._last_overlay_frame is not None and run_analysis:
+                display_frame = self._last_overlay_frame
 
         if self._source_mode == "file":
             label = (
@@ -471,7 +575,10 @@ class MainWindow(QMainWindow):
         else:
             label = "MONITOREO"
 
-        self.video_panel.show_frame(display_frame, label)
+        use_smooth = self._monitoring_active and not show_overlay
+        self.video_panel.show_frame(display_frame, label, smooth=use_smooth)
+        if track_perf:
+            self.performance_monitor.mark_frame_end()
 
         if needs_control_update:
             self._update_control_state()
@@ -486,8 +593,14 @@ class MainWindow(QMainWindow):
                 prediction_label = pred.label
                 confidence = pred.confidence
                 self.sidebar.set_prediction(pred.label, pred.confidence)
+                self.session_stats.add_prediction(pred.label, pred.confidence)
 
-                if pred.is_suspicious:
+                confirmed = self.behavior_filter.should_report_suspicious(
+                    pred.is_suspicious,
+                    pred.confidence,
+                    result.intensidad_movimiento,
+                )
+                if confirmed:
                     self.sound_alerts.play_if_suspicious(pred.confidence, True)
                     now = time.time()
                     if now - self._last_suspicious_log_time >= SUSPICIOUS_LOG_COOLDOWN_SEC:
@@ -551,7 +664,12 @@ class MainWindow(QMainWindow):
             )
             self._last_risk_level = result.nivel_riesgo
 
-        if not result.motion_detected:
+        if not self.behavior_filter.motion_detected(
+            result.intensidad_movimiento, result.motion_detected
+        ):
+            return
+
+        if not self.behavior_filter.should_alert_motion(result.intensidad_movimiento):
             return
 
         now = time.time()
@@ -768,12 +886,62 @@ class MainWindow(QMainWindow):
         self._last_frame = None
         self._last_flow_result = None
         self.motion_analyzer.reset()
+        self.behavior_filter.reset()
         self.segment_tracker.reset()
         self.timeline_bar.reset()
         if not keep_ui:
             self.video_panel.clear_display()
             self.control_bar.btn_webcam.setText("Activar Webcam")
         self._update_control_state()
+
+    def _refresh_metrics_panel(self) -> None:
+        counts = self.dataset_manager.count_samples()
+        self.metrics_panel.update_all(
+            self.session_stats.as_advanced_dict(),
+            self.model_trainer.metrics_summary(),
+            self.performance_monitor.as_dict(),
+            dataset_total=counts["total"],
+        )
+
+    def _on_run_automated_test(self, case_id: str) -> None:
+        passed, msg, details = self.test_runner.run_automated(case_id)
+        self.test_runner.save_automated_result(case_id, passed, msg, details)
+        self.test_panel.set_cases(self.test_runner.list_cases())
+        level = "OK" if passed else "WARN"
+        self.test_panel.append_log(msg)
+        self.sidebar.log_activity(f"Prueba {case_id}: {msg}", level)
+
+    def _on_record_session_test(self, case_id: str) -> None:
+        if not self._monitoring_active and self.session_stats.frames_processed == 0:
+            QMessageBox.information(
+                self,
+                "Registrar prueba",
+                "Inicie monitoreo con video o webcam antes de registrar el resultado.",
+            )
+            return
+        ok, msg = self.test_runner.record_session(
+            case_id,
+            self.session_stats.as_advanced_dict(),
+            self.performance_monitor.as_dict(),
+        )
+        self.test_panel.set_cases(self.test_runner.list_cases())
+        self.test_panel.append_log(msg)
+        self.sidebar.log_activity(msg, "OK" if ok else "WARN")
+
+    def _on_generate_reports(self) -> None:
+        testing_path = self.test_runner.generate_testing_report()
+        optim_path = self.test_runner.generate_optimization_report(
+            self.performance_monitor.as_dict(),
+            self.model_trainer.metrics_summary(),
+            self.session_stats.as_advanced_dict(),
+        )
+        self.test_panel.append_log(f"Reporte testing: {testing_path}")
+        self.test_panel.append_log(f"Reporte optimizacion: {optim_path}")
+        QMessageBox.information(
+            self,
+            "Reportes generados",
+            f"Documentacion creada en:\n\n{testing_path}\n{optim_path}",
+        )
 
     def _update_control_state(self) -> None:
         has_source = self._source_mode is not None or self.webcam.is_active
@@ -782,6 +950,7 @@ class MainWindow(QMainWindow):
         self.control_bar.btn_import.setEnabled(not self.webcam.is_active)
         can_label = has_source and self._last_frame is not None
         self.control_bar.set_labeling_available(can_label)
+        self.control_bar.chk_analysis_overlay.setEnabled(self._monitoring_active)
 
     def closeEvent(self, event) -> None:
         self.evidence_panel.stop_all_media()

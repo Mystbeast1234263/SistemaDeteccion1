@@ -1,9 +1,12 @@
 """Panel central de visualización de video."""
 
+import time
+
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QFrame, QLabel, QVBoxLayout, QWidget
 
+from utils.constants import DISPLAY_TARGET_FPS
 from video.frame_utils import frame_to_pixmap
 
 
@@ -15,6 +18,8 @@ class VideoPanel(QFrame):
         self.setObjectName("videoFrame")
         self._cached_w = 0
         self._cached_h = 0
+        self._last_paint = 0.0
+        self._min_paint_interval = 1.0 / max(DISPLAY_TARGET_FPS, 1)
         self._build_ui()
 
     def _build_ui(self) -> None:
@@ -46,10 +51,15 @@ class VideoPanel(QFrame):
         layout.addWidget(header)
         layout.addWidget(self.display, stretch=1)
 
-    def show_frame(self, frame, source_label: str = "") -> None:
+    def show_frame(self, frame, source_label: str = "", smooth: bool = False) -> None:
         """Muestra un frame de OpenCV en el panel."""
         if source_label:
             self.overlay_label.setText(source_label.upper())
+
+        now = time.perf_counter()
+        if smooth and (now - self._last_paint) < self._min_paint_interval:
+            return
+        self._last_paint = now
 
         w = self.display.width()
         h = self.display.height()

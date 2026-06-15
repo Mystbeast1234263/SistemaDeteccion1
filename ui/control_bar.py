@@ -36,12 +36,22 @@ class ControlBar(QWidget):
         self.chk_sound.setObjectName("chkSoundAlerts")
         self.chk_sound.setChecked(True)
 
+        self.chk_analysis_overlay = QCheckBox("Overlay analisis")
+        self.chk_analysis_overlay.setObjectName("chkAnalysisOverlay")
+        self.chk_analysis_overlay.setChecked(False)
+        self.chk_analysis_overlay.setToolTip(
+            "Activa vectores de flujo optico e HUD sobre el video. "
+            "Desactívelo para maxima fluidez."
+        )
+        self.chk_analysis_overlay.setEnabled(False)
+
         row1.addWidget(self.btn_import)
         row1.addWidget(self.btn_webcam)
         row1.addStretch()
         row1.addWidget(self.btn_start)
         row1.addWidget(self.btn_stop)
         row1.addStretch()
+        row1.addWidget(self.chk_analysis_overlay)
         row1.addWidget(self.chk_sound)
         layout.addLayout(row1)
 

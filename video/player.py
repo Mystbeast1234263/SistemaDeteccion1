@@ -1,5 +1,7 @@
 """Reproductor de archivos de video con OpenCV."""
 
+import time
+
 import cv2
 from PyQt5.QtCore import QObject, Qt, QTimer, pyqtSignal
 
@@ -19,7 +21,7 @@ class VideoPlayer(QObject):
         self._capture = None
         self._path = ""
         self._timer = QTimer(self)
-        self._timer.setTimerType(Qt.PreciseTimer)
+        self._timer.setTimerType(Qt.CoarseTimer)
         self._timer.timeout.connect(self._read_next_frame)
         self._fps = DEFAULT_FPS
         self._playing = False
@@ -27,6 +29,7 @@ class VideoPlayer(QObject):
         self._current_frame = 0
         self._duration = 0.0
         self._last_tick = 0.0
+        self._position_emit_counter = 0
 
     @property
     def is_playing(self) -> bool:
@@ -73,12 +76,11 @@ class VideoPlayer(QObject):
         return True
 
     def play(self) -> None:
-        """Inicia la reproducción."""
+        """Inicia la reproduccion."""
         if self._capture is None or not self._capture.isOpened():
             self.error_occurred.emit("No hay video cargado.")
             return
 
-        import time
         self._last_tick = time.perf_counter()
         interval_ms = max(1, int(1000 / self._fps))
         self._timer.setInterval(interval_ms)
@@ -86,7 +88,7 @@ class VideoPlayer(QObject):
         self._timer.start()
 
     def pause(self) -> None:
-        """Pausa la reproducción."""
+        """Pausa la reproduccion."""
         self._timer.stop()
         self._playing = False
 
@@ -101,13 +103,14 @@ class VideoPlayer(QObject):
         self._total_frames = 0
         self._current_frame = 0
         self._duration = 0.0
+        self._position_emit_counter = 0
 
     def seek_start(self) -> None:
         """Reinicia el video al inicio."""
         self.seek_seconds(0.0)
 
     def seek_seconds(self, seconds: float) -> None:
-        """Salta a una posición en segundos."""
+        """Salta a una posicion en segundos."""
         if self._capture is None or not self._capture.isOpened():
             return
 
@@ -127,11 +130,10 @@ class VideoPlayer(QObject):
         if self._capture is None:
             return
 
-        import time
         now = time.perf_counter()
         elapsed = now - self._last_tick
         expected = 1.0 / self._fps if self._fps > 0 else 1.0 / 30
-        frames_to_advance = max(1, int(elapsed / expected)) if elapsed > expected * 1.5 else 1
+        frames_to_advance = max(1, int(elapsed / expected)) if elapsed > expected * 1.8 else 1
         self._last_tick = now
 
         frame = None
@@ -148,5 +150,8 @@ class VideoPlayer(QObject):
             self.playback_finished.emit()
             return
 
-        self.position_changed.emit(self.current_time, self._duration)
+        self._position_emit_counter += 1
+        if self._position_emit_counter % 3 == 0:
+            self.position_changed.emit(self.current_time, self._duration)
+
         self.frame_ready.emit(frame)

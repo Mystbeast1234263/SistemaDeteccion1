@@ -7,13 +7,23 @@ import numpy as np
 
 from utils.constants import (
     FLOW_GRID_STEP,
+    FLOW_GRID_STEP_HD,
+    FLOW_GRID_STEP_HD,
     FLOW_MAGNITUDE_SCALE,
     FLOW_MIN_MAGNITUDE,
+    FLOW_OVERLAY_SKIP_UHD,
     FLOW_PROCESS_HEIGHT,
+    FLOW_PROCESS_HEIGHT_HD,
+    FLOW_PROCESS_HEIGHT_UHD,
     FLOW_PROCESS_WIDTH,
+    FLOW_PROCESS_WIDTH_HD,
+    FLOW_PROCESS_WIDTH_UHD,
     FLOW_SMOOTH_ALPHA,
+    HR_VIDEO_HEIGHT_THRESHOLD,
+    MOTION_DETECT_MIN_INTENSITY,
     RISK_HIGH_MIN,
     RISK_MEDIUM_MIN,
+    UHD_VIDEO_HEIGHT_THRESHOLD,
 )
 
 
@@ -40,6 +50,7 @@ class OpticalFlowAnalyzer:
         self._prev_gray = None
         self._smoothed_intensity = 0.0
         self._frame_count = 0
+        self._grid_step = FLOW_GRID_STEP
 
     def reset(self) -> None:
         """Reinicia el estado (nueva fuente o fin de análisis)."""
@@ -52,15 +63,21 @@ class OpticalFlowAnalyzer:
         return getattr(self, "_last_features", None)
 
     def process(self, frame: np.ndarray, draw_overlay: bool = True) -> MotionFeatures:
-        """Procesa un frame BGR y devuelve métricas + frame anotado."""
+        """Procesa un frame BGR: analisis en resolucion reducida, overlay en original."""
         self._frame_count += 1
         h, w = frame.shape[:2]
-
-        scale = min(FLOW_PROCESS_WIDTH / w, FLOW_PROCESS_HEIGHT / h, 1.0)
-        proc_w = max(1, int(w * scale))
-        proc_h = max(1, int(h * scale))
-        small = cv2.resize(frame, (proc_w, proc_h))
+        proc_w, proc_h = self._analysis_size(w, h)
+        scale = min(proc_w / w, proc_h / h, 1.0)
+        small_w = max(1, int(w * scale))
+        small_h = max(1, int(h * scale))
+        small = cv2.resize(frame, (small_w, small_h), interpolation=cv2.INTER_AREA)
         gray = cv2.GaussianBlur(cv2.cvtColor(small, cv2.COLOR_BGR2GRAY), (5, 5), 0)
+
+        self._grid_step = FLOW_GRID_STEP_HD if h >= HR_VIDEO_HEIGHT_THRESHOLD else FLOW_GRID_STEP
+
+        draw_vectors = draw_overlay
+        if h >= UHD_VIDEO_HEIGHT_THRESHOLD and draw_overlay:
+            draw_vectors = self._frame_count % FLOW_OVERLAY_SKIP_UHD == 0
 
         output = frame.copy() if draw_overlay else frame
 
@@ -119,10 +136,12 @@ class OpticalFlowAnalyzer:
         )
         intensity = int(round(self._smoothed_intensity))
         risk_level = self._risk_from_intensity(intensity)
-        motion_detected = intensity >= 8 and active_count > 0
+        motion_detected = intensity >= MOTION_DETECT_MIN_INTENSITY and active_count > 0
 
-        if draw_overlay:
-            self._draw_flow_vectors(output, flow, magnitude, proc_w, proc_h)
+        if draw_vectors:
+            self._draw_flow_vectors(output, flow, magnitude, small_w, small_h)
+            self._draw_hud(output, intensity, risk_level, avg_magnitude, avg_direction)
+        elif draw_overlay:
             self._draw_hud(output, intensity, risk_level, avg_magnitude, avg_direction)
 
         features = self._build_features(
@@ -136,6 +155,14 @@ class OpticalFlowAnalyzer:
         )
         self._last_features = features
         return features
+
+    @staticmethod
+    def _analysis_size(width: int, height: int) -> tuple[int, int]:
+        if height >= UHD_VIDEO_HEIGHT_THRESHOLD:
+            return FLOW_PROCESS_WIDTH_UHD, FLOW_PROCESS_HEIGHT_UHD
+        if height >= HR_VIDEO_HEIGHT_THRESHOLD:
+            return FLOW_PROCESS_WIDTH_HD, FLOW_PROCESS_HEIGHT_HD
+        return FLOW_PROCESS_WIDTH, FLOW_PROCESS_HEIGHT
 
     def _build_features(
         self,
@@ -183,7 +210,7 @@ class OpticalFlowAnalyzer:
         h, w = frame.shape[:2]
         scale_x = w / proc_w
         scale_y = h / proc_h
-        step = FLOW_GRID_STEP
+        step = self._grid_step
 
         for y in range(0, proc_h, step):
             for x in range(0, proc_w, step):

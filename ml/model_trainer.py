@@ -4,11 +4,13 @@ import copy
 import pickle
 import shutil
 from collections import Counter
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import f1_score, precision_score, recall_score
 from sklearn.preprocessing import LabelEncoder
 
 from ml.dataset_manager import DatasetManager
@@ -143,12 +145,20 @@ class ModelTrainer:
             n_jobs=-1,
         )
         self.model.fit(X_train, y_train)
+        y_pred = self.model.predict(X_test)
         accuracy = float(self.model.score(X_test, y_test))
+        precision = float(precision_score(y_test, y_pred, average="weighted", zero_division=0))
+        recall = float(recall_score(y_test, y_pred, average="weighted", zero_division=0))
+        f1 = float(f1_score(y_test, y_pred, average="weighted", zero_division=0))
         self._training_rows = copy.deepcopy(rows)
         self._metrics = {
             "accuracy": round(accuracy * 100, 2),
+            "precision": round(precision * 100, 2),
+            "recall": round(recall * 100, 2),
+            "f1_score": round(f1 * 100, 2),
             "samples": len(rows),
             "features": ["intensidad", "magnitud", "direccion", "cantidad", "riesgo_enc"],
+            "trained_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         }
         return True, "", len(rows), round(accuracy * 100, 2)
 
@@ -212,6 +222,20 @@ class ModelTrainer:
             return True, msg
         except Exception as exc:
             return False, f"Error al entrenar: {exc}"
+
+    def metrics_summary(self) -> dict:
+        """Metricas del modelo para panel avanzado."""
+        m = self._metrics
+        return {
+            "accuracy": m.get("accuracy", 0),
+            "precision": m.get("precision", 0),
+            "recall": m.get("recall", 0),
+            "f1_score": m.get("f1_score", 0),
+            "samples": m.get("samples", len(self._training_rows)),
+            "trained_at": m.get("trained_at", "—"),
+            "model_path": self._model_path.name if self._model_path else "—",
+            "is_loaded": self.is_loaded,
+        }
 
     def save(self, filename: str = "modelo_v1.pkl") -> tuple[bool, str]:
         if self.model is None:

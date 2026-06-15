@@ -3,11 +3,19 @@
 import cv2
 from PyQt5.QtCore import QObject, QTimer, pyqtSignal
 
-from utils.constants import DEFAULT_FPS, WEBCAM_INDEX
+from utils.constants import (
+    DEFAULT_FPS,
+    VIDEO_BUFFER_SIZE,
+    WEBCAM_CAPTURE_HEIGHT,
+    WEBCAM_CAPTURE_WIDTH,
+    WEBCAM_DROP_BUFFERS,
+    WEBCAM_INDEX,
+    WEBCAM_TARGET_FPS,
+)
 
 
 class WebcamCapture(QObject):
-    """Captura frames en tiempo real desde la cámara."""
+    """Captura frames en tiempo real desde la camara (optimizada para baja latencia)."""
 
     frame_ready = pyqtSignal(object)
     error_occurred = pyqtSignal(str)
@@ -36,19 +44,25 @@ class WebcamCapture(QObject):
             capture = cv2.VideoCapture(self._camera_index)
         if not capture.isOpened():
             self.error_occurred.emit(
-                "No se pudo acceder a la webcam. Verifique que esté conectada."
+                "No se pudo acceder a la webcam. Verifique que este conectada."
             )
             return False
 
+        capture.set(cv2.CAP_PROP_BUFFERSIZE, VIDEO_BUFFER_SIZE)
+        capture.set(cv2.CAP_PROP_FRAME_WIDTH, WEBCAM_CAPTURE_WIDTH)
+        capture.set(cv2.CAP_PROP_FRAME_HEIGHT, WEBCAM_CAPTURE_HEIGHT)
+        capture.set(cv2.CAP_PROP_FPS, WEBCAM_TARGET_FPS)
+
         self._capture = capture
-        self._timer.setInterval(int(1000 / DEFAULT_FPS))
+        interval = max(1, int(1000 / WEBCAM_TARGET_FPS))
+        self._timer.setInterval(interval)
         self._active = True
         self._timer.start()
         self.started.emit()
         return True
 
     def stop(self) -> None:
-        """Detiene la captura y libera la cámara."""
+        """Detiene la captura y libera la camara."""
         if not self._active and self._capture is None:
             return
 
@@ -68,11 +82,16 @@ class WebcamCapture(QObject):
         if not self._active or self._capture is None:
             return
 
-        ret, frame = self._capture.read()
-        if not ret:
+        for _ in range(WEBCAM_DROP_BUFFERS):
+            if not self._capture.grab():
+                break
+
+        ret, frame = self._capture.retrieve()
+        if not ret or frame is None:
+            ret, frame = self._capture.read()
+        if not ret or frame is None:
             self.error_occurred.emit("Error al leer frame de la webcam.")
             self.stop()
             return
 
         self.frame_ready.emit(frame)
-

@@ -131,12 +131,12 @@ class SidebarPanel(QWidget):
 
         self.stats_labels = {}
         for key, label in [
-            ("total_alerts", "Total alertas"),
-            ("total_suspicious", "Total sospechosos"),
+            ("total_alerts", "Alertas (% frames)"),
+            ("total_suspicious", "Sospechosos (% frames)"),
             ("time_analyzed", "Tiempo analizado"),
             ("avg_risk", "Riesgo promedio"),
-            ("captures", "Capturas"),
-            ("clips", "Clips"),
+            ("captures", "Capturas (% sospechas)"),
+            ("clips", "Clips guardados"),
         ]:
             frame = QFrame()
             frame.setObjectName("statRow")
@@ -224,8 +224,11 @@ class SidebarPanel(QWidget):
     def update_statistics(self, stats: dict) -> None:
         for key, lbl in self.stats_labels.items():
             lbl.setText(str(stats.get(key, "0")))
-        if "total_alerts" in stats:
-            self.set_alert_count(int(stats.get("total_alerts", 0)))
+        raw_alerts = stats.get("total_alerts_raw", 0)
+        try:
+            self.set_alert_count(int(raw_alerts))
+        except (TypeError, ValueError):
+            pass
 
     def add_alert(self, message: str) -> None:
         if self.alerts_list.count() == 1:

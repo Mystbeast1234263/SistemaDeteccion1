@@ -437,7 +437,8 @@ QWidget#navBar {
     border-bottom: 1px solid #1e3a5f;
 }
 
-QPushButton#btnNavMonitor, QPushButton#btnNavEvidence {
+QPushButton#btnNavMonitor, QPushButton#btnNavEvidence,
+QPushButton#btnNavTests, QPushButton#btnNavMetrics {
     background-color: #141c2e;
     color: #7a9bb8;
     border: 1px solid #1e3a5f;
@@ -447,7 +448,8 @@ QPushButton#btnNavMonitor, QPushButton#btnNavEvidence {
     font-weight: bold;
 }
 
-QPushButton#btnNavMonitor:checked, QPushButton#btnNavEvidence:checked {
+QPushButton#btnNavMonitor:checked, QPushButton#btnNavEvidence:checked,
+QPushButton#btnNavTests:checked, QPushButton#btnNavMetrics:checked {
     background-color: #1a2840;
     color: #00d4ff;
     border-color: #00d4ff;
@@ -529,13 +531,13 @@ QComboBox#evidenceSortCombo {
     font-size: 10px;
 }
 
-QCheckBox#chkSoundAlerts {
+QCheckBox#chkSoundAlerts, QCheckBox#chkAnalysisOverlay {
     color: #7a9bb8;
     font-size: 10px;
     spacing: 6px;
 }
 
-QCheckBox#chkSoundAlerts::indicator {
+QCheckBox#chkSoundAlerts::indicator, QCheckBox#chkAnalysisOverlay::indicator {
     width: 14px;
     height: 14px;
     border: 1px solid #1e3a5f;
@@ -543,7 +545,7 @@ QCheckBox#chkSoundAlerts::indicator {
     border-radius: 3px;
 }
 
-QCheckBox#chkSoundAlerts::indicator:checked {
+QCheckBox#chkSoundAlerts::indicator:checked, QCheckBox#chkAnalysisOverlay::indicator:checked {
     background: #1a2840;
     border-color: #00d4ff;
 }
@@ -564,5 +566,89 @@ QLabel#alertCount {
     color: #ffaa00;
     font-size: 22px;
     font-weight: bold;
+}
+
+QLabel#panelTitle {
+    color: #00d4ff;
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+QWidget#metricsPanel, QWidget#testPanel {
+    background-color: #080c14;
+}
+
+QScrollArea#metricsScroll {
+    background: transparent;
+    border: none;
+}
+
+QWidget#metricsContent {
+    background-color: #080c14;
+}
+
+QFrame#metricsSection {
+    background-color: #141c2e;
+    border: 1px solid #1e3a5f;
+    border-radius: 8px;
+}
+
+QLabel#metricsSectionTitle {
+    color: #00d4ff;
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+QLabel#metricsLabel {
+    color: #7a9bb8;
+    font-size: 10px;
+}
+
+QLabel#metricsValue {
+    color: #e8f4ff;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+QFrame#testCaseCard {
+    background-color: #141c2e;
+    border: 1px solid #1e3a5f;
+    border-radius: 8px;
+}
+
+QLabel#testCaseTitle {
+    color: #e8f4ff;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+QLabel#testCaseDesc, QLabel#testCaseExpected, QLabel#testCaseResult {
+    color: #7a9bb8;
+    font-size: 10px;
+}
+
+QLabel#testHint {
+    color: #4a6278;
+    font-size: 10px;
+}
+
+QPushButton#btnTestAuto, QPushButton#btnTestRecord, QPushButton#btnGenerateReports {
+    background-color: #1a2840;
+    color: #00d4ff;
+    border: 1px solid #1e3a5f;
+    border-radius: 4px;
+    padding: 6px 14px;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+QTextEdit#testLog {
+    background-color: #0f1624;
+    color: #7a9bb8;
+    border: 1px solid #1e3a5f;
+    border-radius: 4px;
+    font-size: 10px;
 }
 
