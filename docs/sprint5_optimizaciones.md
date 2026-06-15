@@ -92,11 +92,20 @@ Entre análisis se **reutiliza el último resultado** de movimiento/ML.
 
 ---
 
-### 4.6 Throttling de refresco visual
+### 4.6 Objetivo 60 FPS (video y webcam)
 
-Durante monitoreo, la pantalla se actualiza como máximo a **30 FPS** (`DISPLAY_TARGET_FPS`), aunque lleguen más frames. Evita saturar la UI.
+- **Reproduccion:** timer a **60 Hz** (`PLAYBACK_DISPLAY_FPS`); en videos de 30 FPS repite frames para pantalla fluida sin acelerar el video.
+- **Webcam:** captura a **60 FPS** en **960×540** con codec MJPG cuando la camara lo permite.
+- **Pantalla:** maximo **960×540** y refresco a **60 FPS** (menos calidad, mas fluidez).
+- **Timer:** `Qt.PreciseTimer` en reproductor y webcam.
 
-**Archivo:** `ui/video_panel.py`
+**Constantes:** `TARGET_FPS`, `PLAYBACK_DISPLAY_FPS`, `DISPLAY_TARGET_FPS`, `WEBCAM_TARGET_FPS`
+
+---
+
+### 4.7 Throttling de refresco visual (legacy)
+
+Ya no limita a 30 FPS; el objetivo es **60 FPS** constante.
 
 ---
 

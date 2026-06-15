@@ -26,7 +26,9 @@ VIDEO_EXTENSIONS = (
     "Todos los archivos (*.*)"
 )
 
-DEFAULT_FPS = 30
+DEFAULT_FPS = 60
+TARGET_FPS = 60
+PLAYBACK_DISPLAY_FPS = 60
 WEBCAM_INDEX = 0
 
 # Flujo óptico Farneback (Sprint 2)
@@ -95,16 +97,16 @@ VIDEO_BUFFER_SIZE = 1
 SUSPICIOUS_LOG_COOLDOWN_SEC = 5.0
 SOUND_ALERT_COOLDOWN_SEC = 4.0
 
-# Visualizacion fluida — cap de resolucion en pantalla (no afecta analisis ML)
-DISPLAY_MAX_WIDTH = 1280
-DISPLAY_MAX_HEIGHT = 720
-DISPLAY_TARGET_FPS = 30
+# Visualizacion fluida — 60 FPS, resolucion reducida para mantener ritmo
+DISPLAY_MAX_WIDTH = 960
+DISPLAY_MAX_HEIGHT = 540
+DISPLAY_TARGET_FPS = 60
 
-# Webcam — captura ligera para menor latencia
-WEBCAM_CAPTURE_WIDTH = 1280
-WEBCAM_CAPTURE_HEIGHT = 720
-WEBCAM_TARGET_FPS = 30
-WEBCAM_DROP_BUFFERS = 2
+# Webcam — 60 FPS, resolucion media-baja para fluidez
+WEBCAM_CAPTURE_WIDTH = 960
+WEBCAM_CAPTURE_HEIGHT = 540
+WEBCAM_TARGET_FPS = 60
+WEBCAM_DROP_BUFFERS = 1
 
 # Sprint 5 — Flujo óptico adaptativo (alta resolución)
 FLOW_PROCESS_WIDTH_HD = 640

@@ -63,7 +63,8 @@ class PerformanceMonitor:
         return self._avg(self._ram_samples_mb)
 
     def as_dict(self) -> dict:
-        target_ms = 1000.0 / 30.0
+        from utils.constants import TARGET_FPS
+        target_ms = 1000.0 / TARGET_FPS
         frame_budget_pct = round(min(self.avg_frame_ms / target_ms * 100, 999), 1) if target_ms else 0
         ram_usage_pct = 0.0
         if self.avg_ram_mb > 0:

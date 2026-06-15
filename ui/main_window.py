@@ -56,6 +56,7 @@ from utils.constants import (
     SUSPICIOUS_LOG_COOLDOWN_SEC,
     UI_UPDATE_INTERVAL,
     UHD_VIDEO_HEIGHT_THRESHOLD,
+    WEBCAM_TARGET_FPS,
     VIDEO_EXTENSIONS,
 )
 from utils.performance_monitor import PerformanceMonitor
@@ -518,7 +519,11 @@ class MainWindow(QMainWindow):
         )
 
         if self._monitoring_active:
-            fps = self.video_player.fps if self._source_mode == "file" else 30.0
+            fps = (
+                self.video_player.display_fps
+                if self._source_mode == "file"
+                else WEBCAM_TARGET_FPS
+            )
             self._analysis_interval = self._analysis_interval_for(frame)
 
             if self._frame_counter % EVIDENCE_FRAME_INTERVAL == 0:
@@ -575,7 +580,7 @@ class MainWindow(QMainWindow):
         else:
             label = "MONITOREO"
 
-        use_smooth = self._monitoring_active and not show_overlay
+        use_smooth = False
         self.video_panel.show_frame(display_frame, label, smooth=use_smooth)
         if track_perf:
             self.performance_monitor.mark_frame_end()

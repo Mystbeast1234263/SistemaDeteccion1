@@ -1,10 +1,9 @@
 """Captura de video desde webcam."""
 
 import cv2
-from PyQt5.QtCore import QObject, QTimer, pyqtSignal
+from PyQt5.QtCore import QObject, Qt, QTimer, pyqtSignal
 
 from utils.constants import (
-    DEFAULT_FPS,
     VIDEO_BUFFER_SIZE,
     WEBCAM_CAPTURE_HEIGHT,
     WEBCAM_CAPTURE_WIDTH,
@@ -15,7 +14,7 @@ from utils.constants import (
 
 
 class WebcamCapture(QObject):
-    """Captura frames en tiempo real desde la camara (optimizada para baja latencia)."""
+    """Captura webcam a 60 FPS con resolucion optimizada para fluidez."""
 
     frame_ready = pyqtSignal(object)
     error_occurred = pyqtSignal(str)
@@ -27,6 +26,7 @@ class WebcamCapture(QObject):
         self._camera_index = camera_index
         self._capture = None
         self._timer = QTimer(self)
+        self._timer.setTimerType(Qt.PreciseTimer)
         self._timer.timeout.connect(self._read_frame)
         self._active = False
 
@@ -34,8 +34,12 @@ class WebcamCapture(QObject):
     def is_active(self) -> bool:
         return self._active
 
+    @property
+    def target_fps(self) -> float:
+        return float(WEBCAM_TARGET_FPS)
+
     def start(self) -> bool:
-        """Abre la webcam e inicia la captura."""
+        """Abre la webcam e inicia captura a 60 FPS."""
         if self._active:
             return True
 
@@ -52,6 +56,7 @@ class WebcamCapture(QObject):
         capture.set(cv2.CAP_PROP_FRAME_WIDTH, WEBCAM_CAPTURE_WIDTH)
         capture.set(cv2.CAP_PROP_FRAME_HEIGHT, WEBCAM_CAPTURE_HEIGHT)
         capture.set(cv2.CAP_PROP_FPS, WEBCAM_TARGET_FPS)
+        capture.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
 
         self._capture = capture
         interval = max(1, int(1000 / WEBCAM_TARGET_FPS))

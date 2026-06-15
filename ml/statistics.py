@@ -3,6 +3,8 @@
 from dataclasses import dataclass
 from datetime import datetime
 
+from utils.constants import TARGET_FPS
+
 
 @dataclass
 class SessionStatistics:
@@ -62,7 +64,7 @@ class SessionStatistics:
         self.clips_count += 1
         self.last_evidence_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    def add_frame(self, fps: float = 30.0) -> None:
+    def add_frame(self, fps: float = 60.0) -> None:
         self.frames_processed += 1
         self.fps_sum += fps
         self.fps_samples += 1
@@ -179,7 +181,7 @@ class SessionStatistics:
 
     @property
     def fps_efficiency_pct(self) -> float:
-        target = 30.0
+        target = float(TARGET_FPS)
         if self.avg_fps <= 0:
             return 0.0
         return round(min(self.avg_fps / target * 100, 100.0), 1)
