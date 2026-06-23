@@ -50,9 +50,8 @@ from utils.constants import (
     DATASET_AUTO_INTERVAL,
     EVIDENCE_FRAME_INTERVAL,
     HR_VIDEO_HEIGHT_THRESHOLD,
+    DOCUMENTACION_HTML,
     MODELS_DIR,
-    SPRINT5_OPTIM_DOC,
-    SPRINT5_TESTING_DOC,
     SUSPICIOUS_LOG_COOLDOWN_SEC,
     UI_UPDATE_INTERVAL,
     UHD_VIDEO_HEIGHT_THRESHOLD,
@@ -104,7 +103,6 @@ class MainWindow(QMainWindow):
         self.behavior_filter = BehaviorFilter()
         self.performance_monitor = PerformanceMonitor()
         self.test_runner = TestRunner()
-        self._ensure_sprint5_docs()
 
         self._setup_window()
         self._build_ui()
@@ -404,11 +402,6 @@ class MainWindow(QMainWindow):
         if not self.predictor.is_ready:
             self.sidebar.set_prediction("SIN MODELO", 0)
         self._update_control_state()
-
-    def _ensure_sprint5_docs(self) -> None:
-        if not SPRINT5_TESTING_DOC.exists():
-            self.test_runner.generate_testing_report()
-        # sprint5_optimizaciones.html es el documento principal (incluido en docs/)
 
     def _auto_load_model(self) -> None:
         ok, msg = self.model_trainer.load_latest()
@@ -937,13 +930,11 @@ class MainWindow(QMainWindow):
         )
         self.test_panel.append_log(f"Reporte testing: {testing_path}")
         self.test_panel.append_log(f"Metricas sesion: {optim_path}")
-        main_doc = SPRINT5_OPTIM_DOC
         QMessageBox.information(
             self,
             "Reportes generados",
-            f"Documentacion:\n\n"
-            f"Optimizaciones (antes/ahora):\n{main_doc}\n\n"
-            f"Metricas de esta sesion:\n{optim_path}\n\n"
+            f"Documentacion principal:\n{DOCUMENTACION_HTML}\n\n"
+            f"Metricas de sesion:\n{optim_path}\n\n"
             f"Testing:\n{testing_path}",
         )
 

@@ -9,9 +9,9 @@ import numpy as np
 
 from utils.constants import (
     DOCS_DIR,
-    SPRINT5_TESTING_DOC,
-    TEST_RESULTS_PATH,
     TESTING_DIR,
+    TEST_REPORT_PATH,
+    TEST_RESULTS_PATH,
 )
 from video.optical_flow import OpticalFlowAnalyzer
 
@@ -197,9 +197,11 @@ class TestRunner:
 
     def generate_testing_report(self) -> Path:
         lines = [
-            "# Sprint 5 — Reporte de Testing SIDACS",
+            "# Reporte de Testing SIDACS",
             "",
             f"Generado: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+            "",
+            "Documentacion completa: `documentacion.html` (seccion Sprint 5).",
             "",
             "## Casos de prueba",
             "",
@@ -233,11 +235,12 @@ class TestRunner:
             "1. Abra la pestana **Pruebas** en SIDACS.",
             "2. Para *Video vacio*, use **Ejecutar automatico**.",
             "3. Para los demas casos, cargue video o webcam, inicie monitoreo y pulse **Registrar resultado**.",
-            "4. Pulse **Generar reporte** para actualizar este archivo.",
+            "4. Pulse **Generar reporte** para actualizar `testing/test_report.md`.",
             "",
         ])
-        SPRINT5_TESTING_DOC.write_text("\n".join(lines), encoding="utf-8")
-        return SPRINT5_TESTING_DOC
+        TEST_REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
+        TEST_REPORT_PATH.write_text("\n".join(lines), encoding="utf-8")
+        return TEST_REPORT_PATH
 
     def generate_optimization_report(
         self,
@@ -245,9 +248,9 @@ class TestRunner:
         model_metrics: dict,
         session_stats: dict,
     ) -> Path:
-        """Genera reporte de sesion en HTML (no sobrescribe el doc principal)."""
-        path = DOCS_DIR / "sprint5_sesion.html"
-        DOCS_DIR.mkdir(parents=True, exist_ok=True)
+        """Genera reporte HTML de metricas de la sesion actual."""
+        path = TESTING_DIR / "session_metrics.html"
+        TESTING_DIR.mkdir(parents=True, exist_ok=True)
         ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         act = session_stats.get("activity", {})
         tests_html = ""
@@ -274,9 +277,9 @@ a {{ color: #1e3a5f; }}
 </style>
 </head>
 <body>
-<h1>Métricas de sesión — Sprint 5</h1>
+<h1>Métricas de sesión — SIDACS</h1>
 <p class="meta">Generado: {ts}<br>
-Documento principal (antes vs. ahora): <a href="sprint5_optimizaciones.html">sprint5_optimizaciones.html</a></p>
+Documentación: <code>documentacion.html</code> (Sprints 5–6)</p>
 <h2>Modelo ML</h2>
 <table>
 <tr><th>Métrica</th><th>Valor</th></tr>

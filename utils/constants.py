@@ -1,7 +1,7 @@
 """Constantes globales de la aplicación."""
 
 APP_NAME = "Sistema Inteligente de Detección y Análisis de Comportamientos Sospechosos"
-APP_VERSION = "5.0.0-sprint5"
+APP_VERSION = "6.0.0-sprint6"
 APP_SHORT_NAME = "SIDACS"
 
 COLORS = {
@@ -122,12 +122,12 @@ MOTION_ALERT_SUSTAINED_CYCLES = 3
 SUSPICIOUS_CONFIRM_CYCLES = 3
 MIN_ML_SUSPICIOUS_CONF = 45.0
 
-# Sprint 5 — Testing y documentación
+# Testing (Sprint 5+)
 TESTING_DIR = ROOT_DIR / "testing"
 TEST_RESULTS_PATH = TESTING_DIR / "test_results.json"
+TEST_REPORT_PATH = TESTING_DIR / "test_report.md"
 DOCS_DIR = ROOT_DIR / "docs"
-SPRINT5_TESTING_DOC = DOCS_DIR / "sprint5_testing.md"
-SPRINT5_OPTIM_DOC = DOCS_DIR / "sprint5_optimizaciones.html"
+DOCUMENTACION_HTML = ROOT_DIR / "documentacion.html"
 
 # Sprint 4 — Alertas sonoras (alineado con sospechoso > 40%)
 SOUND_ALERT_STRONG_CONF = 85.0

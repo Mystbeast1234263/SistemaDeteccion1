@@ -137,10 +137,10 @@
 <p class="meta">
     <strong>Sistema:</strong> Sistema Inteligente de Detección y Análisis de Comportamientos Sospechosos<br>
     <strong>Siglas:</strong> SIDACS<br>
-    <strong>Versión:</strong> 3.0.0-sprint3<br>
+    <strong>Versión:</strong> 6.0.0-sprint6<br>
     <strong>Ubicación:</strong> F:\emergentes\emergentes\SistemaDeteccion<br>
     <strong>Archivo:</strong> manual_tecnico.html<br>
-    <strong>Fecha:</strong> 8 de junio de 2026
+    <strong>Fecha:</strong> 17 de junio de 2026
 </p>
 
 <div class="note">
@@ -879,7 +879,13 @@ cantidad_movimiento, nivel_riesgo, etiqueta</pre>
     <tr><td><code>ml/predictor.py</code></td><td>predict_proba en tiempo real</td></tr>
     <tr><td><code>ml/segment_tracker.py</code></td><td>Marcas temporales para timeline</td></tr>
     <tr><td><code>ml/evidence_manager.py</code></td><td>PNG, MP4, deque buffer</td></tr>
-    <tr><td><code>ml/statistics.py</code></td><td>Contadores de sesión</td></tr>
+    <tr><td><code>ml/statistics.py</code></td><td>Contadores de sesión y métricas avanzadas (%)</td></tr>
+    <tr><td><code>ml/behavior_filter.py</code></td><td>Filtro anti falsos positivos (Sprint 5)</td></tr>
+    <tr><td><code>ml/test_runner.py</code></td><td>Casos de prueba y reportes (Sprint 5)</td></tr>
+    <tr><td><code>ui/metrics_panel.py</code></td><td>Pestaña Métricas avanzadas (Sprint 5)</td></tr>
+    <tr><td><code>ui/test_panel.py</code></td><td>Pestaña Pruebas (Sprint 5)</td></tr>
+    <tr><td><code>ui/nav_bar.py</code></td><td>Monitoreo / Evidencias / Pruebas / Métricas</td></tr>
+    <tr><td><code>utils/performance_monitor.py</code></td><td>CPU, RAM, ms/frame (Sprint 5)</td></tr>
     <tr><td><code>utils/constants.py</code></td><td>Umbrales, rutas, colores, intervalos</td></tr>
     <tr><td><code>styles/dark_theme.qss</code></td><td>Tema visual completo</td></tr>
 </table>
@@ -901,7 +907,7 @@ cantidad_movimiento, nivel_riesgo, etiqueta</pre>
 </table>
 
 <div class="note">
-    <p><strong>Documentos relacionados:</strong> <code>documentacion.html</code> (documentación general y sprints) · <code>README.md</code> (inicio rápido) · <code>requirements.txt</code> (dependencias).</p>
+    <p><strong>Documentos relacionados:</strong> <code>documentacion.html</code> (manual Sprints 0–6) · <code>testing/test_results.json</code> · <code>requirements.txt</code></p>
 </div>
 
 </body>

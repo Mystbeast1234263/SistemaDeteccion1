@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+*.egg-info/
+.venv/
+venv/
+.env
+testing/session_metrics.html
+testing/test_report.md

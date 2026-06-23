@@ -117,9 +117,9 @@
     <h1>Sistema Inteligente de Detección y Análisis de Comportamientos Sospechosos</h1>
     <p class="meta">
         <strong>Proyecto:</strong> SIDACS (SistemaDeteccion)<br>
-        <strong>Versión actual:</strong> 4.0.0-sprint4<br>
+        <strong>Versión actual:</strong> 6.0.0-sprint6<br>
         <strong>Ubicación del proyecto:</strong> F:\emergentes\emergentes\SistemaDeteccion<br>
-        <strong>Última actualización de este documento:</strong> 8 de junio de 2026<br>
+        <strong>Última actualización de este documento:</strong> 17 de junio de 2026<br>
         <strong>Archivo:</strong> documentacion.html
     </p>
 
@@ -157,6 +157,8 @@
         <li><a href="#sprint4-historial">10.3 Historial de incidentes</a></li>
         <li><a href="#sprint4-sonido">10.5 Alertas sonoras</a></li>
         <li><a href="#sprint4-optim">10.6 Optimizaciones Sprint 4</a></li>
+        <li><a href="#sprint5">Sprint 5 — Testing, métricas y optimización</a></li>
+        <li><a href="#sprint6">Sprint 6 — Demo y documentación final</a></li>
         <li><a href="#interfaz">Interfaz y diseño visual</a></li>
         <li><a href="#pendiente">Funcionalidades pendientes</a></li>
         <li><a href="#changelog">Registro de cambios</a></li>
@@ -179,6 +181,9 @@
         características MotionFeatures del Sprint 2 como entrada principal del modelo RandomForestClassifier.
         El Sprint 4 completa el dashboard de supervisión con centro de evidencias integrado, historial
         persistente de incidentes, alertas sonoras configurables y optimizaciones de rendimiento.
+        El Sprint 5 agrega testing formal, métricas avanzadas en porcentajes, reducción de falsos
+        positivos, fluidez a 60 FPS y panel de rendimiento (CPU/RAM). El Sprint 6 cierra el proyecto
+        con demo funcional, documentación consolidada y entrega en repositorio Git.
     </p>
 
     <h2 id="tecnologias">2. Tecnologías</h2>
@@ -924,7 +929,55 @@ Confianza: 91% | Riesgo: ALTO</pre>
         </tbody>
     </table>
 
-    <h2 id="interfaz">11. Interfaz y diseño visual</h2>
+    <h2 id="sprint5">11. Sprint 5 — Testing, métricas y optimización</h2>
+    <p><strong>Fecha de entrega:</strong> 15/06/2026 · Commits: <code>28aa355</code>, <code>675bdd4</code></p>
+
+    <h3>11.1 Optimización de video y webcam</h3>
+    <table>
+        <thead><tr><th>Aspecto</th><th>Antes (S1–S4)</th><th>Ahora (S5)</th></tr></thead>
+        <tbody>
+            <tr><td>FPS pantalla</td><td>~30 FPS</td><td>60 FPS (<code>PLAYBACK_DISPLAY_FPS</code>, <code>WEBCAM_TARGET_FPS</code>)</td></tr>
+            <tr><td>Resolución display</td><td>Hasta 1280×720</td><td>Máx. 960×540 (<code>DISPLAY_MAX_WIDTH/HEIGHT</code>)</td></tr>
+            <tr><td>Overlay análisis</td><td>Obligatorio en monitoreo</td><td>Desacoplado; checkbox «Overlay análisis» opcional</td></tr>
+            <tr><td>Intervalo análisis</td><td>Cada 2 frames</td><td>4 / 6 / 8 frames según resolución del video</td></tr>
+        </tbody>
+    </table>
+
+    <h3>11.2 Reducción de falsos positivos</h3>
+    <p>Módulo <code>ml/behavior_filter.py</code>: exige movimiento sostenido antes de alertar; umbrales 18/28/58; sospecha ML requiere confianza ≥ 45% y ciclos consecutivos.</p>
+
+    <h3>11.3 Panel de métricas y testing</h3>
+    <ul>
+        <li>Pestaña <strong>Métricas</strong> (<code>ui/metrics_panel.py</code>): actividad, movimiento, riesgo %, evidencias, modelo (Accuracy, Precision, Recall, F1), rendimiento CPU/RAM.</li>
+        <li>Pestaña <strong>Pruebas</strong> (<code>ui/test_panel.py</code>, <code>ml/test_runner.py</code>): 5 casos documentados; resultados en <code>testing/test_results.json</code>.</li>
+        <li>Monitor <code>utils/performance_monitor.py</code> con psutil.</li>
+        <li>Estadísticas en porcentajes en <code>ml/statistics.py</code>.</li>
+        <li>Botón <strong>Ampliar</strong> en modelo ML: fusiona conocimiento del .pkl con dataset.csv.</li>
+    </ul>
+
+    <h3>11.4 Casos de prueba Sprint 5</h3>
+    <table>
+        <thead><tr><th>Caso</th><th>Descripción</th><th>Resultado esperado</th></tr></thead>
+        <tbody>
+            <tr><td>Video normal</td><td>Escena estable</td><td>Pocas alertas, sin sospechosos ML</td></tr>
+            <tr><td>Movimiento excesivo</td><td>Movimiento brusco</td><td>Intensidad alta, riesgo elevado</td></tr>
+            <tr><td>Comportamiento sospechoso</td><td>Patrón intenso sostenido</td><td>Predicción sospechosa o riesgo ALTO</td></tr>
+            <tr><td>Video vacío / estático</td><td>Frame sin cambios</td><td>Sin falsos positivos</td></tr>
+            <tr><td>Webcam tiempo real</td><td>Monitoreo en vivo</td><td>FPS estable, UI fluida</td></tr>
+        </tbody>
+    </table>
+
+    <h2 id="sprint6">12. Sprint 6 — Demo y documentación final</h2>
+    <p><strong>Fecha de entrega:</strong> 15/06/2026 · Commit: <code>741863c</code></p>
+    <ul>
+        <li>Sistema funcional end-to-end: importar video → monitoreo → ML → evidencias → métricas → pruebas.</li>
+        <li>Documentación consolidada en este archivo y en <code>manual_tecnico.html</code>.</li>
+        <li>Repositorio: <a href="https://github.com/Mystbeast1234263/SistemaDeteccion1">github.com/Mystbeast1234263/SistemaDeteccion1</a></li>
+        <li>Acta de entrega: <code>docs/acta_reclamacion_40_puntos.docx</code></li>
+        <li>Integrantes: Joshua Jair Chavez Abirari (UI) · Marcelo Mena Molina (lógica técnica).</li>
+    </ul>
+
+    <h2 id="interfaz">13. Interfaz y diseño visual</h2>
     <ul>
         <li>Tema oscuro: fondo #0a0e17, paneles #0f1624.</li>
         <li>Acentos azul neón y rojo neón.</li>
@@ -933,20 +986,21 @@ Confianza: 91% | Riesgo: ALTO</pre>
         <li>Panel lateral con tarjetas de métricas, predicción ML, confianza, estadísticas, barra de progreso y log HTML coloreado.</li>
         <li>Barra de tiempo bajo el video con marcas de segmentos sospechosos (Sprint 3).</li>
         <li>Segunda fila de botones ML en barra de controles (Sprint 3).</li>
-        <li>Barra de navegación Monitoreo / Evidencias (Sprint 4).</li>
+        <li>Barra de navegación Monitoreo / Evidencias / Pruebas / Métricas (Sprint 4–5).</li>
         <li>Centro de evidencias con pestañas Capturas, Clips e Incidentes (Sprint 4).</li>
         <li>Checkbox de alertas sonoras en barra de controles (Sprint 4).</li>
+        <li>Checkbox «Overlay análisis» y fluidez 60 FPS (Sprint 5).</li>
         <li>Estado del sistema y contador de alertas en panel lateral (Sprint 4).</li>
     </ul>
 
-    <h2 id="pendiente">12. Funcionalidades pendientes</h2>
+    <h2 id="pendiente">14. Funcionalidades pendientes</h2>
     <ul>
         <li>Clasificadores adicionales y validación cruzada avanzada.</li>
         <li>Ajuste de sensibilidad y umbrales desde la interfaz.</li>
         <li>Exportación del historial de incidentes a PDF o CSV.</li>
     </ul>
 
-    <h2 id="changelog">13. Registro de cambios</h2>
+    <h2 id="changelog">15. Registro de cambios</h2>
     <p>Historial cronológico de modificaciones al proyecto.</p>
 
     <div class="changelog-entry">
@@ -1031,8 +1085,25 @@ Confianza: 91% | Riesgo: ALTO</pre>
         </p>
     </div>
 
+    <div class="changelog-entry">
+        <p class="changelog-date">Sprint 5 — Testing, métricas y optimización (15/06/2026)</p>
+        <p>
+            Fluidez 60 FPS, display 960×540, overlay opcional, análisis desacoplado. Pestañas Pruebas y Métricas.
+            BehaviorFilter anti falsos positivos. PerformanceMonitor con psutil. TestRunner con 5 casos.
+            Estadísticas en %. Ampliar conocimiento ML. Versión 5.0.0-sprint5.
+        </p>
+    </div>
+
+    <div class="changelog-entry">
+        <p class="changelog-date">Sprint 6 — Demo y documentación final (15/06/2026)</p>
+        <p>
+            Cierre técnico, documentación consolidada en documentacion.html, entrega Git commit 741863c.
+            Versión 6.0.0-sprint6.
+        </p>
+    </div>
+
     <p style="margin-top: 32px; font-size: 10pt; color: #4a6278; text-align: center;">
-        SIDACS — Documentación v4.0.0-sprint4
+        SIDACS — Documentación v6.0.0-sprint6
     </p>
 
 </body>

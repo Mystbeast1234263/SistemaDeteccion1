@@ -460,5 +460,300 @@
       "psutil_available": true
     },
     "recorded_at": "2026-06-15 05:07:24"
+  },
+  {
+    "case_id": "normal_video",
+    "case_name": "Video normal sin actividad sospechosa",
+    "expected": "Intensidad baja, pocas alertas, sin detecciones sospechosas ML.",
+    "passed": true,
+    "evaluation": "Alertas: 1, sospechosos: 2, max int: 28%",
+    "observations": "",
+    "session_stats": {
+      "activity": {
+        "time_analyzed": "00:06",
+        "time_analyzed_sec": 6.3,
+        "frames_processed": 380,
+        "avg_fps": 60.0,
+        "fps_efficiency_pct": 100.0,
+        "sessions_count": 1,
+        "session_started_at": "2026-06-17 11:18:48"
+      },
+      "movement": {
+        "avg_intensity": 13.4,
+        "max_intensity": 28,
+        "min_intensity": 0,
+        "avg_magnitude": 1.366,
+        "avg_direction": 146.2,
+        "avg_intensity_pct": "13.4%",
+        "max_intensity_pct": "28%",
+        "min_intensity_pct": "0%"
+      },
+      "risk": {
+        "low_events": 340,
+        "medium_events": 40,
+        "high_events": 0,
+        "low_pct": 89.5,
+        "medium_pct": 10.5,
+        "high_pct": 0.0,
+        "avg_risk": 13.4,
+        "avg_risk_pct": "13.4%"
+      },
+      "suspicious": {
+        "total_detected": 2,
+        "predictions": 13,
+        "avg_confidence": 62.6,
+        "max_confidence": 74.3,
+        "suspicious_rate": 3.42,
+        "detect_rate_pct": 0.53,
+        "avg_confidence_pct": "62.6%",
+        "max_confidence_pct": "74.3%"
+      },
+      "evidence": {
+        "captures": 2,
+        "clips": 0,
+        "total": 2,
+        "evidence_rate_pct": 100.0,
+        "last_evidence_at": "2026-06-17 11:18:54"
+      },
+      "alerts": {
+        "total": 1,
+        "alert_rate_pct": 0.26
+      }
+    },
+    "performance": {
+      "avg_frame_ms": 15.92,
+      "avg_cpu": 81.24,
+      "avg_ram_mb": 554.06,
+      "frame_budget_pct": 95.5,
+      "ram_usage_pct": 13.5,
+      "samples": 38,
+      "psutil_available": true
+    },
+    "recorded_at": "2026-06-17 11:20:09"
+  },
+  {
+    "case_id": "excessive_motion",
+    "case_name": "Movimiento excesivo",
+    "expected": "Intensidad alta, alertas de actividad elevada o riesgo alto.",
+    "passed": false,
+    "evaluation": "Intensidad max 28%, eventos riesgo alto: 0",
+    "observations": "",
+    "session_stats": {
+      "activity": {
+        "time_analyzed": "00:06",
+        "time_analyzed_sec": 6.3,
+        "frames_processed": 380,
+        "avg_fps": 60.0,
+        "fps_efficiency_pct": 100.0,
+        "sessions_count": 1,
+        "session_started_at": "2026-06-17 11:18:48"
+      },
+      "movement": {
+        "avg_intensity": 13.4,
+        "max_intensity": 28,
+        "min_intensity": 0,
+        "avg_magnitude": 1.366,
+        "avg_direction": 146.2,
+        "avg_intensity_pct": "13.4%",
+        "max_intensity_pct": "28%",
+        "min_intensity_pct": "0%"
+      },
+      "risk": {
+        "low_events": 340,
+        "medium_events": 40,
+        "high_events": 0,
+        "low_pct": 89.5,
+        "medium_pct": 10.5,
+        "high_pct": 0.0,
+        "avg_risk": 13.4,
+        "avg_risk_pct": "13.4%"
+      },
+      "suspicious": {
+        "total_detected": 2,
+        "predictions": 13,
+        "avg_confidence": 62.6,
+        "max_confidence": 74.3,
+        "suspicious_rate": 3.42,
+        "detect_rate_pct": 0.53,
+        "avg_confidence_pct": "62.6%",
+        "max_confidence_pct": "74.3%"
+      },
+      "evidence": {
+        "captures": 2,
+        "clips": 0,
+        "total": 2,
+        "evidence_rate_pct": 100.0,
+        "last_evidence_at": "2026-06-17 11:18:54"
+      },
+      "alerts": {
+        "total": 1,
+        "alert_rate_pct": 0.26
+      }
+    },
+    "performance": {
+      "avg_frame_ms": 15.92,
+      "avg_cpu": 81.24,
+      "avg_ram_mb": 554.06,
+      "frame_budget_pct": 95.5,
+      "ram_usage_pct": 13.5,
+      "samples": 38,
+      "psutil_available": true
+    },
+    "recorded_at": "2026-06-17 11:20:09"
+  },
+  {
+    "case_id": "suspicious_simulation",
+    "case_name": "Simulacion de comportamiento sospechoso",
+    "expected": "Prediccion sospechosa o riesgo ALTO con confianza relevante.",
+    "passed": true,
+    "evaluation": "Sospechosos: 2, conf max: 74.3%",
+    "observations": "",
+    "session_stats": {
+      "activity": {
+        "time_analyzed": "00:06",
+        "time_analyzed_sec": 6.3,
+        "frames_processed": 380,
+        "avg_fps": 60.0,
+        "fps_efficiency_pct": 100.0,
+        "sessions_count": 1,
+        "session_started_at": "2026-06-17 11:18:48"
+      },
+      "movement": {
+        "avg_intensity": 13.4,
+        "max_intensity": 28,
+        "min_intensity": 0,
+        "avg_magnitude": 1.366,
+        "avg_direction": 146.2,
+        "avg_intensity_pct": "13.4%",
+        "max_intensity_pct": "28%",
+        "min_intensity_pct": "0%"
+      },
+      "risk": {
+        "low_events": 340,
+        "medium_events": 40,
+        "high_events": 0,
+        "low_pct": 89.5,
+        "medium_pct": 10.5,
+        "high_pct": 0.0,
+        "avg_risk": 13.4,
+        "avg_risk_pct": "13.4%"
+      },
+      "suspicious": {
+        "total_detected": 2,
+        "predictions": 13,
+        "avg_confidence": 62.6,
+        "max_confidence": 74.3,
+        "suspicious_rate": 3.42,
+        "detect_rate_pct": 0.53,
+        "avg_confidence_pct": "62.6%",
+        "max_confidence_pct": "74.3%"
+      },
+      "evidence": {
+        "captures": 2,
+        "clips": 0,
+        "total": 2,
+        "evidence_rate_pct": 100.0,
+        "last_evidence_at": "2026-06-17 11:18:54"
+      },
+      "alerts": {
+        "total": 1,
+        "alert_rate_pct": 0.26
+      }
+    },
+    "performance": {
+      "avg_frame_ms": 15.92,
+      "avg_cpu": 81.24,
+      "avg_ram_mb": 554.06,
+      "frame_budget_pct": 95.5,
+      "ram_usage_pct": 13.5,
+      "samples": 38,
+      "psutil_available": true
+    },
+    "recorded_at": "2026-06-17 11:20:10"
+  },
+  {
+    "case_id": "empty_video",
+    "case_name": "Video vacio / estatico",
+    "expected": "Intensidad 0 o muy baja, sin alertas de movimiento.",
+    "passed": true,
+    "evaluation": "Video estatico: sin falsos positivos de movimiento.",
+    "observations": "Prueba automatica",
+    "details": {
+      "intensity_frame1": 0,
+      "intensity_frame2": 0,
+      "motion_detected": false
+    },
+    "recorded_at": "2026-06-17 11:20:11",
+    "type": "automated"
+  },
+  {
+    "case_id": "webcam_realtime",
+    "case_name": "Webcam en tiempo real",
+    "expected": "Analisis fluido, FPS estable, sin cuelgues de interfaz.",
+    "passed": true,
+    "evaluation": "Frames: 380, FPS prom: 60.0",
+    "observations": "",
+    "session_stats": {
+      "activity": {
+        "time_analyzed": "00:06",
+        "time_analyzed_sec": 6.3,
+        "frames_processed": 380,
+        "avg_fps": 60.0,
+        "fps_efficiency_pct": 100.0,
+        "sessions_count": 1,
+        "session_started_at": "2026-06-17 11:18:48"
+      },
+      "movement": {
+        "avg_intensity": 13.4,
+        "max_intensity": 28,
+        "min_intensity": 0,
+        "avg_magnitude": 1.366,
+        "avg_direction": 146.2,
+        "avg_intensity_pct": "13.4%",
+        "max_intensity_pct": "28%",
+        "min_intensity_pct": "0%"
+      },
+      "risk": {
+        "low_events": 340,
+        "medium_events": 40,
+        "high_events": 0,
+        "low_pct": 89.5,
+        "medium_pct": 10.5,
+        "high_pct": 0.0,
+        "avg_risk": 13.4,
+        "avg_risk_pct": "13.4%"
+      },
+      "suspicious": {
+        "total_detected": 2,
+        "predictions": 13,
+        "avg_confidence": 62.6,
+        "max_confidence": 74.3,
+        "suspicious_rate": 3.42,
+        "detect_rate_pct": 0.53,
+        "avg_confidence_pct": "62.6%",
+        "max_confidence_pct": "74.3%"
+      },
+      "evidence": {
+        "captures": 2,
+        "clips": 0,
+        "total": 2,
+        "evidence_rate_pct": 100.0,
+        "last_evidence_at": "2026-06-17 11:18:54"
+      },
+      "alerts": {
+        "total": 1,
+        "alert_rate_pct": 0.26
+      }
+    },
+    "performance": {
+      "avg_frame_ms": 15.92,
+      "avg_cpu": 81.24,
+      "avg_ram_mb": 554.06,
+      "frame_budget_pct": 95.5,
+      "ram_usage_pct": 13.5,
+      "samples": 38,
+      "psutil_available": true
+    },
+    "recorded_at": "2026-06-17 11:20:12"
   }
 ]
